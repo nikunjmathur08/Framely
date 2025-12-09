@@ -1,0 +1,5 @@
+{
+  "name": "Framely",
+  "description": "A high-fidelity streaming application replica featuring a cinematic dark UI, fluid animations, and TMDB integration.",
+  "requestFramePermissions": []
+}
