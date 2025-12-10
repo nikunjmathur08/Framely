@@ -21,20 +21,20 @@ const Row: React.FC<RowProps> = ({ title, movies, loading, isLargeRow = false })
   };
 
   return (
-    <div className="h-fit space-y-0.5 md:space-y-1 px-4 md:px-10 mb-28 md:mb-32 -mt-16 md:-mt-20 first:mt-0 group relative group-hover:z-50">
+    <div className="h-fit space-y-0.5 md:space-y-1 px-4 md:px-10 mb-8 md:mb-12 -mt-16 md:-mt-20 first:mt-0 group relative group-hover:z-50">
       <h2 className="w-56 cursor-pointer text-sm font-semibold text-[#e5e5e5] transition duration-200 hover:text-white md:text-2xl mb-2">
         {title}
       </h2>
       
-      <div className="relative -ml-2 md:-ml-4 overflow-visible">
+      <div className="relative -ml-2 md:-ml-4">
         <ChevronLeft
           className={`absolute top-0 bottom-0 left-2 z-40 m-auto h-9 w-9 cursor-pointer opacity-0 transition hover:scale-125 group-hover:opacity-100 ${!isMoved && 'hidden'}`}
           onClick={() => handleClick('left')}
         />
         <div
           ref={rowRef}
-          className="flex items-center space-x-0.5 overflow-x-scroll scrollbar-hide md:space-x-1 px-2 md:px-4 py-4 pointer-events-none"
-          style={{ scrollBehavior: 'smooth', overflowY: 'visible' }}
+          className="flex items-center space-x-0.5 overflow-x-scroll scrollbar-hide md:space-x-1 px-2 md:px-4 pointer-events-none"
+          style={{ scrollBehavior: 'smooth', overflowY: 'visible', paddingTop: '120px', paddingBottom: '180px', marginTop: '-120px', marginBottom: '-180px' }}
         >
           {loading
             ? Array.from({ length: 8 }).map((_, i) => (

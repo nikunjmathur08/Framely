@@ -29,6 +29,16 @@ interface AppState {
   movieDataError: Error | null;
   lastFetched: number | null;
   fetchMovieData: (force?: boolean) => Promise<void>;
+
+  // Trailer Cache
+  trailerCache: Record<number, string | null>;
+  getTrailer: (id: number) => string | null | undefined;
+  setTrailer: (id: number, url: string | null) => void;
+
+  // Trailer Playback State
+  playingTrailer: { videoId: string; movie: Movie } | null;
+  setPlayingTrailer: (videoId: string, movie: Movie) => void;
+  clearPlayingTrailer: () => void;
 }
 
 const CACHE_TTL = 30 * 60 * 1000; // 30 minutes in milliseconds
@@ -55,6 +65,18 @@ export const useAppStore = create<AppState>()(
       movieDataLoading: false,
       movieDataError: null,
       lastFetched: null,
+
+      // Trailer Cache
+      trailerCache: {} as Record<number, string | null>,
+      getTrailer: (id: number) => get().trailerCache[id],
+      setTrailer: (id: number, url: string | null) =>
+        set({ trailerCache: { ...get().trailerCache, [id]: url } }),
+
+      // Trailer Playback State
+      playingTrailer: null,
+      setPlayingTrailer: (videoId: string, movie: Movie) =>
+        set({ playingTrailer: { videoId, movie } }),
+      clearPlayingTrailer: () => set({ playingTrailer: null }),
       
       // My List actions
       addToList: (movie) => {
