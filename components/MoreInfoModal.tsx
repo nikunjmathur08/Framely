@@ -9,12 +9,14 @@ import {
   PlayCircle,
   Volume2,
   VolumeX,
+  ChevronDown,
 } from "lucide-react";
 import { Movie } from "../types";
 import { useAppStore } from "../store/useAppStore";
 import { getImageUrl, TMDB_GENRES } from "../services/tmdb";
 import { useNavigate } from "react-router-dom";
 import { useTrailer } from "../hooks/useTrailer";
+import { useTvSeasonData } from "../hooks/useTvSeasonData";
 import YouTube, { YouTubeProps } from "react-youtube";
 
 const MoreInfoModal: React.FC = () => {
@@ -22,9 +24,17 @@ const MoreInfoModal: React.FC = () => {
     useAppStore();
   const navigate = useNavigate();
   const [isMuted, setIsMuted] = useState(true);
+  const [selectedSeason, setSelectedSeason] = useState(1);
+  const [player, setPlayer] = useState<any>(null);
 
   // Call hooks before early return - React Rules of Hooks
   const { trailer } = useTrailer(selectedMovie || { id: 0 });
+  const mediaType =
+    selectedMovie?.media_type || (selectedMovie?.name ? "tv" : "movie");
+  const { episodes, loading: episodesLoading } = useTvSeasonData(
+    mediaType === "tv" ? selectedMovie?.id || null : null,
+    selectedSeason
+  );
 
   // All hooks must be before the early return
   useEffect(() => {
@@ -47,8 +57,6 @@ const MoreInfoModal: React.FC = () => {
 
   if (!selectedMovie) return null;
 
-  const mediaType =
-    selectedMovie.media_type || (selectedMovie.name ? "tv" : "movie");
   const added = isInList(selectedMovie.id);
   const displayTitle =
     selectedMovie.title || selectedMovie.name || selectedMovie.original_name;
@@ -88,6 +96,21 @@ const MoreInfoModal: React.FC = () => {
     selectedMovie.images?.logos?.find((img: any) => img.iso_639_1 === "en")
       ?.file_path || selectedMovie.images?.logos?.[0]?.file_path;
 
+  const toggleMute = () => {
+    if (player) {
+      if (isMuted) {
+        player.unMute();
+      } else {
+        player.mute();
+      }
+      setIsMuted(!isMuted);
+    }
+  };
+
+  const onPlayerReady = (event: any) => {
+    setPlayer(event.target);
+  };
+
   return (
     <AnimatePresence>
       <motion.div
@@ -115,10 +138,7 @@ const MoreInfoModal: React.FC = () => {
 
           {/* Video Background Section */}
           <div className="relative w-full aspect-video bg-black">
-            <div
-              key={trailer ? "yt-${trailer}" : "img-modal"}
-              className="relative w-full h-full"
-            >
+            <div className="relative w-full h-full">
               {trailer ? (
                 <div className="w-full h-full relative">
                   <YouTube
@@ -130,18 +150,19 @@ const MoreInfoModal: React.FC = () => {
                         autoplay: 1,
                         controls: 0,
                         modestbranding: 1,
-                        mute: isMuted ? 1 : 0,
+                        mute: 1,
                         rel: 0,
                         fs: 0,
                       },
                     }}
+                    onReady={onPlayerReady}
                     className="w-full h-full"
                     iframeClassName="w-full h-full"
                   />
 
                   {/* Mute/Unmute Button */}
                   <button
-                    onClick={() => setIsMuted(!isMuted)}
+                    onClick={toggleMute}
                     className="absolute bottom-4 right-4 z-50 bg-black/70 hover:bg-black/90 rounded-full p-3 transition-colors group"
                     title={isMuted ? "Unmute" : "Mute"}
                   >
@@ -285,7 +306,143 @@ const MoreInfoModal: React.FC = () => {
                 </div>
               </div>
             </div>
+            {/* Episodes Section - Only for TV Series */}
+            {mediaType === "tv" &&
+              selectedMovie.seasons &&
+              selectedMovie.seasons.length > 0 && (
+                <div className="pt-6 border-t border-gray-800">
+                  {/* Header with Season Selector */}
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-xl font-semibold text-white">
+                      Episodes
+                    </h3>
 
+                    {/* Season Selector Dropdown */}
+                    <div className="relative">
+                      <select
+                        value={selectedSeason}
+                        onChange={(e) =>
+                          setSelectedSeason(Number(e.target.value))
+                        }
+                        className="appearance-none bg-[#2f2f2f] text-white px-4 py-2 pr-10 rounded border border-gray-600 hover:border-gray-400 focus:border-white focus:outline-none cursor-pointer transition"
+                      >
+                        {selectedMovie.seasons
+                          .filter((season) => season.season_number > 0)
+                          .map((season) => (
+                            <option
+                              key={season.id}
+                              value={season.season_number}
+                            >
+                              {season.name}
+                            </option>
+                          ))}
+                      </select>
+                      <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                    </div>
+                  </div>
+
+                  {/* Season Info */}
+                  {selectedMovie.seasons.find(
+                    (s) => s.season_number === selectedSeason
+                  ) && (
+                    <div className="mb-4">
+                      <p className="text-sm text-gray-400">
+                        {
+                          selectedMovie.seasons.find(
+                            (s) => s.season_number === selectedSeason
+                          )?.name
+                        }
+                        :
+                        <span className="ml-2 text-gray-500">
+                          {
+                            selectedMovie.seasons.find(
+                              (s) => s.season_number === selectedSeason
+                            )?.overview
+                          }
+                        </span>
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Episodes List */}
+                  <div className="space-y-2">
+                    {episodesLoading ? (
+                      <div className="text-center py-8 text-gray-400">
+                        Loading episodes...
+                      </div>
+                    ) : episodes.length > 0 ? (
+                      episodes.map((episode) => {
+                        const episodeRuntime = episode.runtime || 45;
+                        return (
+                          <div
+                            key={episode.id}
+                            className="group border-b border-gray-600 rounded-md overflow-hidden transition cursor-pointer"
+                            onClick={() => {
+                              navigate(
+                                `/watch/tv/${selectedMovie.id}?season=${selectedSeason}&episode=${episode.episode_number}`
+                              );
+                              closeMoreInfo();
+                            }}
+                          >
+                            <div className="flex gap-4 p-3">
+                              {/* Episode Number */}
+                              <div className="flex-shrink-0 w-8 flex items-center justify-center">
+                                <span className="text-2xl font-bold text-gray-500">
+                                  {episode.episode_number}
+                                </span>
+                              </div>
+
+                              {/* Episode Thumbnail */}
+                              <div className="relative flex-shrink-0 w-36 aspect-video bg-black rounded overflow-hidden">
+                                {episode.still_path ? (
+                                  <img
+                                    src={getImageUrl(
+                                      episode.still_path,
+                                      "w500"
+                                    )}
+                                    alt={episode.name}
+                                    className="w-full h-full object-cover"
+                                  />
+                                ) : (
+                                  <div className="w-full h-full bg-gray-700 flex items-center justify-center">
+                                    <PlayCircle className="w-8 h-8 text-gray-500" />
+                                  </div>
+                                )}
+                                {/* Play Button Overlay on Hover */}
+                                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
+                                  <div className="border-2 border-white rounded-full p-2">
+                                    <Play className="w-6 h-6 text-white fill-white" />
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Episode Info */}
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-start justify-between gap-2 mb-1">
+                                  <h4 className="text-white font-medium line-clamp-1">
+                                    {episode.name}
+                                  </h4>
+                                  <span className="text-gray-400 text-sm flex-shrink-0">
+                                    {episodeRuntime}m
+                                  </span>
+                                </div>
+                                <p className="text-gray-400 text-sm line-clamp-2">
+                                  {episode.overview ||
+                                    "No description available."}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })
+                    ) : (
+                      <div className="text-center py-8 text-gray-400">
+                        No episodes available
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             {/* More Like This Section */}
             {selectedMovie.recommendations?.results &&
               selectedMovie.recommendations.results.length > 0 && (

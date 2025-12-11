@@ -1,7 +1,7 @@
-import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
-import { Movie } from '../types';
-import axios from 'axios';
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
+import { Movie } from "../types";
+import axios from "axios";
 
 export interface MovieData {
   trending: Movie[];
@@ -22,7 +22,7 @@ interface AppState {
   isInList: (movieId: number) => boolean;
   openMoreInfo: (movie: Movie) => void;
   closeMoreInfo: () => void;
-  
+
   // Movie data caching
   movieData: MovieData;
   movieDataLoading: boolean;
@@ -39,6 +39,11 @@ interface AppState {
   playingTrailer: { videoId: string; movie: Movie } | null;
   setPlayingTrailer: (videoId: string, movie: Movie) => void;
   clearPlayingTrailer: () => void;
+
+  // Global Hover State - ensures only one card is hovered at a time
+  hoveredMovieId: number | null;
+  setHoveredMovie: (movieId: number | null) => void;
+  clearHoveredMovie: () => void;
 }
 
 const CACHE_TTL = 30 * 60 * 1000; // 30 minutes in milliseconds
@@ -59,7 +64,7 @@ export const useAppStore = create<AppState>()(
       // My List state
       myList: [],
       selectedMovie: null,
-      
+
       // Movie data state
       movieData: emptyMovieData,
       movieDataLoading: false,
@@ -77,7 +82,13 @@ export const useAppStore = create<AppState>()(
       setPlayingTrailer: (videoId: string, movie: Movie) =>
         set({ playingTrailer: { videoId, movie } }),
       clearPlayingTrailer: () => set({ playingTrailer: null }),
-      
+
+      // Global Hover State
+      hoveredMovieId: null,
+      setHoveredMovie: (movieId: number | null) =>
+        set({ hoveredMovieId: movieId }),
+      clearHoveredMovie: () => set({ hoveredMovieId: null }),
+
       // My List actions
       addToList: (movie) => {
         const { myList } = get();
@@ -97,64 +108,64 @@ export const useAppStore = create<AppState>()(
       closeMoreInfo: () => {
         set({ selectedMovie: null });
       },
-      
+
       // Movie data fetching with intelligent caching
       fetchMovieData: async (force = false) => {
         const { lastFetched, movieDataLoading, movieData } = get();
         const now = Date.now();
-        
+
         // Check if cache is fresh (within TTL)
-        const isCacheFresh = lastFetched && (now - lastFetched) < CACHE_TTL;
-        
+        const isCacheFresh = lastFetched && now - lastFetched < CACHE_TTL;
+
         // Skip fetch if cache is fresh and not forced
         if (!force && isCacheFresh) {
-          console.log('✓ Using cached movie data (fresh)');
+          console.log("✓ Using cached movie data (fresh)");
           return;
         }
-        
+
         // Skip if already loading
         if (movieDataLoading) {
-          console.log('⏳ Movie data fetch already in progress');
+          console.log("⏳ Movie data fetch already in progress");
           return;
         }
-        
+
         // If cache exists but is stale, show cached data while fetching
         const hasCache = movieData.trending.length > 0;
         if (hasCache && !isCacheFresh) {
-          console.log('🔄 Cache stale, refreshing in background...');
+          console.log("🔄 Cache stale, refreshing in background...");
         }
-        
+
         try {
           set({ movieDataLoading: true, movieDataError: null });
-          
-          const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
+
+          const backendUrl =
+            import.meta.env.VITE_BACKEND_URL || "http://localhost:3001";
           const response = await axios.get(`${backendUrl}/api/movies/homepage`);
-          
+
           set({
             movieData: response.data,
             movieDataLoading: false,
             lastFetched: Date.now(),
             movieDataError: null,
           });
-          
-          console.log('✅ Movie data fetched and cached successfully');
+
+          console.log("✅ Movie data fetched and cached successfully");
         } catch (err) {
-          console.error('❌ Error fetching movie data:', err);
+          console.error("❌ Error fetching movie data:", err);
           set({
-            movieDataError: err instanceof Error ? err : new Error('Failed to fetch movie data'),
+            movieDataError:
+              err instanceof Error
+                ? err
+                : new Error("Failed to fetch movie data"),
             movieDataLoading: false,
           });
         }
       },
     }),
     {
-      name: 'framley-storage',
-      // Only persist small data to localStorage to avoid QuotaExceededError
-      // movieData is kept in memory for instant navigation but not persisted across page refreshes
+      name: "framley-storage",
       partialize: (state) => ({
         myList: state.myList,
-        // Note: movieData and lastFetched excluded to avoid localStorage quota issues
-        // This means first load after page refresh will fetch fresh data, which is acceptable
       }),
     }
   )

@@ -30,13 +30,22 @@ const MovieCard: React.FC<Props> = ({
   index = 0,
   total = 0,
 }) => {
-  const [isHovered, setIsHovered] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
+  const [player, setPlayer] = useState<any>(null);
   const hoverTimeout = useRef<any>(null);
   const navigate = useNavigate();
-  const { addToList, removeFromList, isInList } = useAppStore();
+  const {
+    addToList,
+    removeFromList,
+    isInList,
+    hoveredMovieId,
+    setHoveredMovie,
+  } = useAppStore();
   const added = isInList(movie.id);
   const { trailer } = useTrailer(movie);
+
+  // Only show hover state if this card is the globally hovered one
+  const isHovered = hoveredMovieId === movie.id;
 
   // Determine media type if not explicit
   const mediaType = movie.media_type || (movie.name ? "tv" : "movie");
@@ -70,13 +79,28 @@ const MovieCard: React.FC<Props> = ({
       autoplay: 1,
       controls: 0,
       modestbranding: 1,
-      mute: isMuted ? 1 : 0,
+      mute: 1,
       loop: 1,
       rel: 0,
       showinfo: 0,
       iv_load_policy: 3,
       fs: 0,
     },
+  };
+
+  const toggleMute = () => {
+    if (player) {
+      if (isMuted) {
+        player.unMute();
+      } else {
+        player.mute();
+      }
+      setIsMuted(!isMuted);
+    }
+  };
+
+  const onPlayerReady = (event: any) => {
+    setPlayer(event.target);
   };
 
   const formatDuration = (runtime: number) => {
@@ -108,11 +132,11 @@ const MovieCard: React.FC<Props> = ({
       }`}
       style={{ zIndex: isHovered ? 999 : 10 }}
       onMouseEnter={() => {
-        hoverTimeout.current = setTimeout(() => setIsHovered(true, 400));
+        hoverTimeout.current = setTimeout(() => setHoveredMovie(movie.id), 400);
       }}
       onMouseLeave={() => {
         clearTimeout(hoverTimeout.current);
-        setIsHovered(false);
+        setHoveredMovie(null);
       }}
     >
       <motion.div
@@ -141,12 +165,13 @@ const MovieCard: React.FC<Props> = ({
             isHovered ? "rounded-b-none shadow-md" : ""
           }`}
         >
-          <div key={trailer ? `hover-${trailer}` : "img-hover"}>
+          <div>
             {isHovered && trailer ? (
               <div className="w-full h-full absolute inset-0 bg-black">
                 <YouTube
                   videoId={trailer}
                   opts={opts}
+                  onReady={onPlayerReady}
                   className="w-full h-full scale-[1.35]"
                   iframeClassName="w-full h-full"
                   onEnd={(e) => e.target.playVideo()}
@@ -154,7 +179,7 @@ const MovieCard: React.FC<Props> = ({
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    setIsMuted(!isMuted);
+                    toggleMute();
                   }}
                   className="absolute bottom-2 right-2 z-50 p-1.5 rounded-full bg-black/50 hover:bg-black/70 text-white border border-white/30"
                 >

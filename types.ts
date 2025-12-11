@@ -10,14 +10,15 @@ export interface Movie {
   genre_ids: number[];
   first_air_date?: string;
   release_date?: string;
-  media_type?: 'movie' | 'tv';
-  
+  media_type?: "movie" | "tv";
+
   // Detail fields populated by backend aggregation
   images?: {
     logos?: Array<{ file_path: string; iso_639_1: string }>;
   };
   runtime?: number; // For movies
   number_of_seasons?: number; // For TV shows
+  seasons?: Season[]; // For TV shows
   credits?: {
     cast?: Array<{ name: string; character: string; profile_path?: string }>;
     crew?: Array<{ name: string; job: string }>;
@@ -32,6 +33,16 @@ export interface Genre {
   name: string;
 }
 
+export interface Episode {
+  id: number;
+  episode_number: number;
+  name: string;
+  overview: string;
+  still_path: string | null;
+  runtime: number;
+  air_date: string;
+}
+
 export interface Season {
   air_date: string;
   episode_count: number;
@@ -41,6 +52,7 @@ export interface Season {
   poster_path: string;
   season_number: number;
   vote_average: number;
+  episodes?: Episode[];
 }
 
 export interface TvShowDetails extends Movie {
@@ -51,7 +63,7 @@ export interface TvShowDetails extends Movie {
 
 export interface VideoProps {
   tmdbId: string;
-  type: 'movie' | 'tv';
+  type: "movie" | "tv";
 }
 
 export interface RowProps {
