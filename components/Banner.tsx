@@ -5,6 +5,7 @@ import { Info, Play, PlayCircle, Volume2, VolumeX } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAppStore } from "../store/useAppStore";
 import { useTrailer } from "../hooks/useTrailer";
+import YouTube from "react-youtube";
 
 const Banner: React.FC<BannerProps> = ({ movie, loading }) => {
   const navigate = useNavigate();
@@ -12,8 +13,9 @@ const Banner: React.FC<BannerProps> = ({ movie, loading }) => {
   const { trailer } = useTrailer(movie || { id: 0 });
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
-  const playerRef = useRef<HTMLIFrameElement>(null);
+  const [player, setPlayer] = useState<any>(null);
 
+  // Auto-play trailer when it becomes available
   useEffect(() => {
     if (trailer && movie) {
       const timer = setTimeout(() => setIsPlaying(true), 1000);
@@ -21,13 +23,24 @@ const Banner: React.FC<BannerProps> = ({ movie, loading }) => {
     }
   }, [trailer, movie]);
 
+  const onPlayerReady = (event: any) => {
+    setPlayer(event.target);
+  };
+
+  const onEnd = () => {
+    console.log("Trailer ended, reverting to static banner");
+    setIsPlaying(false);
+    setIsMuted(true); // Reset mute state
+  };
+
   const toggleMute = () => {
-    setIsMuted(!isMuted);
-    if (playerRef.current) {
-      const command = isMuted
-        ? '{"event":"command","func":"unMute","args":""}'
-        : '{"event":"command","func":"mute","args":""}';
-      playerRef.current.contentWindow?.postMessage(command, "*");
+    if (player) {
+      if (isMuted) {
+        player.unMute();
+      } else {
+        player.mute();
+      }
+      setIsMuted(!isMuted);
     }
   };
 
@@ -72,14 +85,27 @@ const Banner: React.FC<BannerProps> = ({ movie, loading }) => {
       }}
     >
       {isPlaying && trailer && (
-        <iframe
-          ref={playerRef}
-          className="absolute inset-0 w-full h-full object-cover z-0 pointer-events-none"
-          src={`https://www.youtube.com/embed/${trailer}?autoplay=1&mute=1&controls=0&showinfo=0&modestbranding=1&loop=1&playlist=${trailer}&rel=0&enablejsapi=1`}
-          title="Trailer"
-          allow="autoplay; encrypted-media"
-          allowFullScreen
-        />
+        <div className="absolute inset-0 w-full h-full">
+          <YouTube
+            videoId={trailer}
+            opts={{
+              height: "100%",
+              width: "100%",
+              playerVars: {
+                autoplay: 1,
+                mute: 1,
+                controls: 0,
+                showinfo: 0,
+                modestbranding: 1,
+                rel: 0,
+              },
+            }}
+            onReady={onPlayerReady}
+            onEnd={onEnd}
+            className="w-full h-full scale-[1.4] origin-center"
+            iframeClassName="w-full h-full"
+          />
+        </div>
       )}
 
       <div

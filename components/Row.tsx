@@ -27,7 +27,7 @@ const Row: React.FC<RowProps> = ({
   };
 
   return (
-    <div className="h-fit space-y-1 md:space-y-1 px-4 md:px-10 mb-8 md:mb-12 -mt-16 md:-mt-20 first:mt-0 group relative group-hover:z-50">
+    <div className="h-fit px-4 md:px-10 mb-8 -mt-20 md:-mt-24 group relative group-hover:z-50">
       <h2 className="w-56 cursor-pointer text-sm font-semibold text-[#e5e5e5] transition duration-200 hover:text-white md:text-2xl mb-2">
         {title}
       </h2>
