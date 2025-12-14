@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Search, Bell, Menu, X } from "lucide-react";
 import { useAppStore } from "../store/useAppStore";
@@ -8,6 +8,7 @@ const Navbar: React.FC = () => {
   const [showSearch, setShowSearch] = useState(false);
   const [searchInput, setSearchInput] = useState("");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -22,6 +23,12 @@ const Navbar: React.FC = () => {
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  useEffect(() => {
+    if (showSearch && searchInputRef.current) {
+      searchInputRef.current.focus();
+    }
+  }, [showSearch]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -91,16 +98,17 @@ const Navbar: React.FC = () => {
               >
                 <Search className="w-5 h-5 sm:w-6 sm:h-6 cursor-pointer" />
               </button>
-              <input
-                type="text"
-                className={`bg-transparent text-white text-sm border-none focus:ring-0 ml-2 w-full ${
-                  showSearch ? "block" : "hidden"
-                }`}
-                placeholder="Titles, people, genres"
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
-                onBlur={() => !searchInput && setShowSearch(false)}
-              />
+                <input
+                  ref={searchInputRef}
+                  type="text"
+                  className={`bg-transparent text-white text-sm border-none focus:ring-0 outline-none ml-2 w-full ${
+                    showSearch ? "block" : "hidden"
+                  }`}
+                  placeholder="Titles, people, genres"
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
+                  onBlur={() => !searchInput && setShowSearch(false)}
+                />
             </form>
           </div>
 
