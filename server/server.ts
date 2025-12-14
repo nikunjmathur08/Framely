@@ -28,7 +28,7 @@ import { MOCK_MOVIES } from './mockData.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
-const TMDB_API_KEY = process.env.TMDB_API_KEY;
+const TMDB_API_KEY = process.env.TMDB_API_KEY || process.env.VITE_TMDB_API_KEY;
 const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
 
 // Middleware
@@ -40,7 +40,7 @@ const validateApiKey = (req: Request, res: Response, next: Function) => {
   if (!TMDB_API_KEY) {
     return res.status(500).json({ 
       error: 'TMDB API key is not configured on the server',
-      message: 'Please set TMDB_API_KEY in your environment variables'
+      message: 'Please set TMDB_API_KEY or VITE_TMDB_API_KEY in your environment variables'
     });
   }
   next();
