@@ -2,7 +2,7 @@ import axios from 'axios';
 import { TvShowDetails, Movie } from '../types';
 
 // Backend proxy server URL
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || (import.meta.env.PROD ? '' : 'http://localhost:3001');
 
 const tmdb = axios.create({
   baseURL: `${BACKEND_URL}/api/tmdb`,

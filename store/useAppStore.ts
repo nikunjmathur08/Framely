@@ -139,7 +139,7 @@ export const useAppStore = create<AppState>()(
           set({ movieDataLoading: true, movieDataError: null });
 
           const backendUrl =
-            import.meta.env.VITE_BACKEND_URL || "http://localhost:3001";
+            import.meta.env.VITE_BACKEND_URL || (import.meta.env.PROD ? '' : 'http://localhost:3001');
           const response = await axios.get(`${backendUrl}/api/movies/homepage`);
 
           set({
