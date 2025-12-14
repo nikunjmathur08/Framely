@@ -2,7 +2,10 @@ import express, { Request, Response } from 'express';
 import cors from 'cors';
 import axios from 'axios';
 import https from 'https';
+import dotenv from 'dotenv';
 
+// Load .env for local development (not used in Vercel)
+dotenv.config({ path: 'server/.env' });
 // Optimized HTTPS Agent for TMDB connectivity
 const tmdbAgent = new https.Agent({
   keepAlive: true,
