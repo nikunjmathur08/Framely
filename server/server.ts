@@ -3,30 +3,23 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import axios from 'axios';
 import https from 'https'; // Import https for Agent
-import path from 'path';
-import { fileURLToPath } from 'url';
-
-// Get current directory in ES modules
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
 // Optimized HTTPS Agent for TMDB connectivity
-// 1. keepAlive: true - Reuses TCP connections to avoid handshake bottlenecks
-// 2. family: 4 - Forces IPv4 to bypass potential IPv6 routing issues/hangs
-// 3. timeout: 10s - Fails fast if socket hangs
 const tmdbAgent = new https.Agent({
   keepAlive: true,
   family: 4, 
   timeout: 10000,
 });
 
-// Load environment variables from server/.env
-// Safe environment loading
+// Optimization: Removed filesystem path dependency for broader compatibility
+// In Vercel, env vars are injected automatically.
+// In Local Dev, ensure you run from root or have .env loaded.
 if (process.env.NODE_ENV !== 'production') {
   try {
-    dotenv.config({ path: path.join(__dirname, '.env') });
+    dotenv.config();
+    // Try explicit path for local dev convenience if running from root
+    dotenv.config({ path: 'server/.env' });
   } catch (e) {
-    console.warn('Dotenv config failed (expected in production if .env missing)', e);
+    // Ignore errors
   }
 }
 
