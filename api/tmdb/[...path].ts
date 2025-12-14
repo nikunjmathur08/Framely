@@ -8,7 +8,7 @@ const tmdbAgent = new https.Agent({
   timeout: 10000,
 });
 
-const TMDB_API_KEY = process.env.TMDB_API_KEY || process.env.VITE_TMDB_API_KEY;
+const TMDB_READ_ACCESS_TOKEN = process.env.TMDB_READ_ACCESS_TOKEN || process.env.TMDB_API_KEY || process.env.VITE_TMDB_API_KEY;
 const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -21,9 +21,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(200).end();
   }
 
-  if (!TMDB_API_KEY) {
+  if (!TMDB_READ_ACCESS_TOKEN) {
     return res.status(500).json({
-      error: 'TMDB API key not configured'
+      error: 'TMDB Read Access Token not configured'
     });
   }
 
@@ -35,7 +35,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const response = await axios.get(`${TMDB_BASE_URL}/${tmdbPath}`, {
       params: req.query,
       headers: {
-        Authorization: `Bearer ${TMDB_API_KEY}`,
+        Authorization: `Bearer ${TMDB_READ_ACCESS_TOKEN}`,
         'Content-Type': 'application/json;charset=utf-8'
       },
       httpsAgent: tmdbAgent,

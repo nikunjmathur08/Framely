@@ -8,7 +8,8 @@ const tmdbAgent = new https.Agent({
   timeout: 10000,
 });
 
-const TMDB_API_KEY = process.env.TMDB_API_KEY || process.env.VITE_TMDB_API_KEY;
+// Backend: Read Access Token for Bearer authentication
+const TMDB_READ_ACCESS_TOKEN = process.env.TMDB_READ_ACCESS_TOKEN || process.env.TMDB_API_KEY || process.env.VITE_TMDB_API_KEY;
 const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -21,15 +22,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(200).end();
   }
 
-  if (!TMDB_API_KEY) {
+  if (!TMDB_READ_ACCESS_TOKEN) {
     return res.status(500).json({
-      error: 'TMDB API key not configured',
-      message: 'Please set TMDB_API_KEY or VITE_TMDB_API_KEY in environment variables'
+      error: 'TMDB Read Access Token not configured',
+      message: 'Please set TMDB_READ_ACCESS_TOKEN in environment variables'
     });
   }
 
   try {
     console.log('🚀 Fetching aggregated homepage data...');
+    console.log('Read Access Token source:', 
+      process.env.TMDB_READ_ACCESS_TOKEN ? 'TMDB_READ_ACCESS_TOKEN' : 
+      process.env.TMDB_API_KEY ? 'TMDB_API_KEY (fallback)' : 'VITE_TMDB_API_KEY (fallback)');
+    console.log('Token exists:', !!TMDB_READ_ACCESS_TOKEN);
+    console.log('Token prefix:', TMDB_READ_ACCESS_TOKEN ? TMDB_READ_ACCESS_TOKEN.substring(0, 10) : 'N/A');
 
     const requests = {
       trending: '/trending/all/week?language=en-US',
@@ -44,13 +50,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const listPromises = Object.entries(requests).map(async ([key, url]) => {
       try {
         const response = await axios.get(`${TMDB_BASE_URL}${url}`, {
-          headers: { Authorization: `Bearer ${TMDB_API_KEY}` },
+          headers: { Authorization: `Bearer ${TMDB_READ_ACCESS_TOKEN}` },
           httpsAgent: tmdbAgent,
           timeout: 8000
         });
+        console.log(`✅ ${key}: fetched ${response.data.results?.length || 0} items`);
         return { key, results: response.data.results || [] };
       } catch (e: any) {
-        console.error(`Failed to fetch list ${key}:`, e.message);
+        console.error(`❌ Failed to fetch list ${key}:`, e.message);
+        console.error(`   Status: ${e.response?.status}, Data:`, e.response?.data);
         return { key, results: [] };
       }
     });
@@ -73,7 +81,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       try {
         const endpoint = type === 'tv' ? `/tv/${id}` : `/movie/${id}`;
         const response = await axios.get(`${TMDB_BASE_URL}${endpoint}?append_to_response=images,videos,credits,recommendations`, {
-          headers: { Authorization: `Bearer ${TMDB_API_KEY}` },
+          headers: { Authorization: `Bearer ${TMDB_READ_ACCESS_TOKEN}` },
           httpsAgent: tmdbAgent,
           timeout: 8000
         });
