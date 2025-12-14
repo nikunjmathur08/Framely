@@ -4,6 +4,7 @@ import Home from './pages/Home';
 import Watch from './pages/Watch';
 import Search from './pages/Search';
 import MyList from './pages/MyList';
+import Browse from './pages/Browse';
 import MoreInfoModal from './components/MoreInfoModal';
 
 const App: React.FC = () => {
@@ -11,6 +12,9 @@ const App: React.FC = () => {
     <div className="app bg-[#141414] min-h-screen text-white overflow-x-hidden">
       <Routes>
         <Route path="/" element={<Home />} />
+        <Route path="/tv-shows" element={<Browse category="tv" />} />
+        <Route path="/movies" element={<Browse category="movie" />} />
+        <Route path="/new-popular" element={<Browse category="popular" />} />
         <Route path="/watch/:type/:id" element={<Watch />} />
         <Route path="/search" element={<Search />} />
         <Route path="/my-list" element={<MyList />} />

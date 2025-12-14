@@ -22,6 +22,7 @@ interface Props {
   isLargeRow?: boolean;
   index?: number;
   total?: number;
+  isGrid?: boolean;
 }
 
 const MovieCard: React.FC<Props> = ({
@@ -29,6 +30,7 @@ const MovieCard: React.FC<Props> = ({
   isLargeRow = false,
   index = 0,
   total = 0,
+  isGrid = false,
 }) => {
   const [isMuted, setIsMuted] = useState(true);
   const [player, setPlayer] = useState<any>(null);
@@ -141,10 +143,14 @@ const MovieCard: React.FC<Props> = ({
 
   return (
     <div
-      className={`relative flex-none cursor-pointer px-0.5 pointer-events-auto ${
-        isLargeRow
-          ? "w-[140px] sm:w-[180px] h-[210px] sm:h-[270px]"
-          : "w-[140px] sm:w-[180px] md:w-[260px] h-[90px] sm:h-[115px] md:h-[160px]"
+      className={`relative cursor-pointer pointer-events-auto ${
+        isGrid
+          ? "w-full h-full aspect-video"
+          : `flex-none px-0.5 ${
+              isLargeRow
+                ? "w-[140px] sm:w-[180px] h-[210px] sm:h-[270px]"
+                : "w-[140px] sm:w-[180px] md:w-[260px] h-[90px] sm:h-[115px] md:h-[160px]"
+            }`
       }`}
       style={{ zIndex: isHovered ? 999 : 10 }}
       onMouseEnter={() => {

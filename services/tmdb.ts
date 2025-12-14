@@ -200,6 +200,25 @@ export const requests = {
   fetchHorrorMovies: `/discover/movie?with_genres=27`,
   fetchRomanceMovies: `/discover/movie?with_genres=10749`,
   fetchDocumentaries: `/discover/movie?with_genres=99`,
+  
+  // TV Shows Specific
+  fetchTrendingTV: `/trending/tv/week?language=en-US`,
+  fetchTopRatedTV: `/tv/top_rated?language=en-US`,
+  fetchActionAdventureTV: `/discover/tv?with_genres=10759`,
+  fetchComedyTV: `/discover/tv?with_genres=35`,
+  fetchCrimeTV: `/discover/tv?with_genres=80`,
+  fetchDramaTV: `/discover/tv?with_genres=18`,
+  fetchKidsTV: `/discover/tv?with_genres=10762`,
+  fetchSciFiFantasyTV: `/discover/tv?with_genres=10765`,
+
+  // Movies Specific
+  fetchTrendingMovies: `/trending/movie/week?language=en-US`,
+  // (TopRated, Action, Comedy etc already exist reused)
+
+  // New & Popular
+  fetchPopularMovies: `/movie/popular?language=en-US`,
+  fetchPopularTV: `/tv/popular?language=en-US`,
+
   search: `/search/multi?include_adult=false&language=en-US&page=1`,
   getTvDetails: (id: string) => `/tv/${id}?language=en-US&append_to_response=images,videos`,
   getMovieDetails: (id: string) => `/movie/${id}?language=en-US&append_to_response=images,videos`,

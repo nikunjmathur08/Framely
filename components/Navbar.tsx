@@ -47,7 +47,7 @@ const Navbar: React.FC = () => {
           : "bg-gradient-to-b from-black/80 to-transparent"
       }`}
     >
-      <div className="flex items-center justify-between px-2 sm:px-4 py-3 sm:py-4 md:px-10">
+      <div className="flex items-center justify-between px-4 md:px-12 py-3 sm:py-4">
         <div className="flex items-center space-x-2 sm:space-x-4 md:space-x-8">
           <Link to="/">
             <img
@@ -58,19 +58,11 @@ const Navbar: React.FC = () => {
           </Link>
 
           <ul className="hidden md:flex space-x-4 text-sm font-medium text-gray-300">
-            <li className="hover:text-white cursor-pointer transition">Home</li>
-            <li className="hover:text-white cursor-pointer transition">
-              TV Shows
-            </li>
-            <li className="hover:text-white cursor-pointer transition">
-              Movies
-            </li>
-            <li className="hover:text-white cursor-pointer transition">
-              New & Popular
-            </li>
-            <li className="hover:text-white cursor-pointer transition">
-              <Link to="/my-list">My List</Link>
-            </li>
+            <Link to="/"><li className="hover:text-white cursor-pointer transition">Home</li></Link>
+            <Link to="/tv-shows"><li className="hover:text-white cursor-pointer transition">TV Shows</li></Link>
+            <Link to="/movies"><li className="hover:text-white cursor-pointer transition">Movies</li></Link>
+            <Link to="/new-popular"><li className="hover:text-white cursor-pointer transition">New & Popular</li></Link>
+            <Link to="/my-list"><li className="hover:text-white cursor-pointer transition">My List</li></Link>
           </ul>
         </div>
 
