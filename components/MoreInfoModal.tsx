@@ -20,12 +20,13 @@ import { useTvSeasonData } from "../hooks/useTvSeasonData";
 import YouTube, { YouTubeProps } from "react-youtube";
 
 const MoreInfoModal: React.FC = () => {
-  const { selectedMovie, closeMoreInfo, addToList, removeFromList, isInList } = useAppStore();
+  const { selectedMovie, closeMoreInfo, addToList, removeFromList, isInList, bannerTrailerState, setBannerTrailerState } = useAppStore();
   const navigate = useNavigate();
   const [isMuted, setIsMuted] = useState(true);
   const [selectedSeason, setSelectedSeason] = useState(1);
   const [player, setPlayer] = useState<any>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [startTime, setStartTime] = useState<number>(0); // Track where to start playback
 
   // Call hooks before early return - React Rules of Hooks
   const { trailer } = useTrailer(selectedMovie || { id: 0 });
@@ -56,10 +57,24 @@ const MoreInfoModal: React.FC = () => {
   }, [selectedMovie, closeMoreInfo]);
 
   useEffect(() => {
-    if (trailer) {
+    if (bannerTrailerState?.wasPlaying && bannerTrailerState?.trailerId && trailer) {
+      if (bannerTrailerState.trailerId === trailer) {
+        // Set start time from Banner's playback position
+        if (bannerTrailerState.playbackTime) {
+          setStartTime(bannerTrailerState.playbackTime);
+        }
+        // Preserve mute state from Banner
+        if (bannerTrailerState.wasMuted !== undefined) {
+          setIsMuted(bannerTrailerState.wasMuted);
+        }
+        // Auto-play immediately
+        setIsPlaying(true);
+      }
+      setBannerTrailerState(null);
+    } else if (trailer && !bannerTrailerState) {
       setIsPlaying(true);
     }
-  }, [trailer]);
+  }, [trailer, bannerTrailerState, setBannerTrailerState]);
 
   if (!selectedMovie) return null;
 
@@ -115,6 +130,16 @@ const MoreInfoModal: React.FC = () => {
 
   const onPlayerReady = (event: any) => {
     setPlayer(event.target);
+    // If we have a start time from Banner, seek to it immediately
+    if (startTime > 0) {
+      event.target.seekTo(startTime, true);
+    }
+    // Set mute state
+    if (isMuted) {
+      event.target.mute();
+    } else {
+      event.target.unMute();
+    }
   };
 
   return (
@@ -127,10 +152,10 @@ const MoreInfoModal: React.FC = () => {
         onClick={closeMoreInfo}
       >
         <motion.div
-          initial={{ scale: 0.8, opacity: 0 }}
+          initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          exit={{ scale: 0.8, opacity: 0 }}
-          transition={{ type: "spring", damping: 25, stiffness: 300 }}
+          exit={{ scale: 0.9, opacity: 0 }}
+          transition={{ duration: 0.15, ease: "easeOut" }}
           className="relative w-full max-w-4xl mt-8 mb-8 bg-[#181818] rounded-lg shadow-2xl overflow-hidden"
           onClick={(e) => e.stopPropagation()}
         >
@@ -156,9 +181,10 @@ const MoreInfoModal: React.FC = () => {
                         autoplay: 1,
                         controls: 0,
                         modestbranding: 1,
-                        mute: 1,
+                        mute: isMuted ? 1 : 0,
                         rel: 0,
                         fs: 0,
+                        start: startTime > 0 ? Math.floor(startTime) : undefined,
                       },
                     }}
                     onReady={onPlayerReady}

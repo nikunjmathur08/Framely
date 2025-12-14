@@ -44,6 +44,20 @@ interface AppState {
   hoveredMovieId: number | null;
   setHoveredMovie: (movieId: number | null) => void;
   clearHoveredMovie: () => void;
+
+  // Banner Trailer State - for seamless handoff to MoreInfoModal
+  bannerTrailerState: { 
+    wasPlaying: boolean; 
+    trailerId: string | null;
+    playbackTime?: number;
+    wasMuted?: boolean;
+  } | null;
+  setBannerTrailerState: (state: { 
+    wasPlaying: boolean; 
+    trailerId: string | null;
+    playbackTime?: number;
+    wasMuted?: boolean;
+  } | null) => void;
 }
 
 const CACHE_TTL = 30 * 60 * 1000; // 30 minutes in milliseconds
@@ -88,6 +102,10 @@ export const useAppStore = create<AppState>()(
       setHoveredMovie: (movieId: number | null) =>
         set({ hoveredMovieId: movieId }),
       clearHoveredMovie: () => set({ hoveredMovieId: null }),
+
+      // Banner Trailer State
+      bannerTrailerState: null,
+      setBannerTrailerState: (state) => set({ bannerTrailerState: state }),
 
       // My List actions
       addToList: (movie) => {

@@ -9,7 +9,7 @@ import YouTube from "react-youtube";
 
 const Banner: React.FC<BannerProps> = ({ movie, loading }) => {
   const navigate = useNavigate();
-  const { openMoreInfo, setPlayingTrailer } = useAppStore();
+  const { openMoreInfo, setPlayingTrailer, setBannerTrailerState } = useAppStore();
   const { trailer } = useTrailer(movie || { id: 0 });
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
@@ -64,6 +64,23 @@ const Banner: React.FC<BannerProps> = ({ movie, loading }) => {
 
   const handleMoreInfo = () => {
     if (movie) {
+      let currentTime = 0;
+      
+      // Stop Banner's player and capture current playback position
+      if (player && isPlaying) {
+        currentTime = player.getCurrentTime(); // Get exact playback position
+        player.pauseVideo();
+      }
+      setIsPlaying(false);
+      
+      // Pass the playing state, trailer, timestamp, and mute state to the modal
+      setBannerTrailerState({
+        wasPlaying: isPlaying,
+        trailerId: trailer,
+        playbackTime: currentTime,
+        wasMuted: isMuted
+      });
+      
       openMoreInfo(movie);
     }
   };
