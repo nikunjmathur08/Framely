@@ -21,10 +21,17 @@ const tmdbAgent = new https.Agent({
 });
 
 // Load environment variables from server/.env
-dotenv.config({ path: path.join(__dirname, '.env') });
+// Safe environment loading
+if (process.env.NODE_ENV !== 'production') {
+  try {
+    dotenv.config({ path: path.join(__dirname, '.env') });
+  } catch (e) {
+    console.warn('Dotenv config failed (expected in production if .env missing)', e);
+  }
+}
 
-// Import mock data for fallback
-import { MOCK_MOVIES } from './mockData.js';
+// Import mock data (extensionless for better compatibility across build tools)
+import { MOCK_MOVIES } from './mockData';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
