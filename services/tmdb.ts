@@ -1,11 +1,15 @@
 import axios from 'axios';
 import { TvShowDetails, Movie } from '../types';
 
-// Backend proxy server URL
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || (import.meta.env.PROD ? '' : 'http://localhost:3001');
+// Direct TMDB API calls with API key
+const TMDB_API_KEY = import.meta.env.VITE_TMDB_API_KEY;
+const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
 
 const tmdb = axios.create({
-  baseURL: `${BACKEND_URL}/api/tmdb`,
+  baseURL: TMDB_BASE_URL,
+  params: {
+    api_key: TMDB_API_KEY
+  }
 });
 
 
