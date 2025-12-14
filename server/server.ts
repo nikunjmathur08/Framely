@@ -1,8 +1,8 @@
 import express, { Request, Response } from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
 import axios from 'axios';
-import https from 'https'; // Import https for Agent
+import https from 'https';
+
 // Optimized HTTPS Agent for TMDB connectivity
 const tmdbAgent = new https.Agent({
   keepAlive: true,
@@ -10,21 +10,8 @@ const tmdbAgent = new https.Agent({
   timeout: 10000,
 });
 
-// Optimization: Removed filesystem path dependency for broader compatibility
-// In Vercel, env vars are injected automatically.
-// In Local Dev, ensure you run from root or have .env loaded.
-if (process.env.NODE_ENV !== 'production') {
-  try {
-    dotenv.config();
-    // Try explicit path for local dev convenience if running from root
-    dotenv.config({ path: 'server/.env' });
-  } catch (e) {
-    // Ignore errors
-  }
-}
-
-// Import mock data (extensionless for better compatibility across build tools)
-import { MOCK_MOVIES } from './mockData';
+// Import mock data with explicit .js extension for ES module compatibility
+import { MOCK_MOVIES } from './mockData.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
