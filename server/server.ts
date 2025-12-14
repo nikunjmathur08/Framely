@@ -205,15 +205,19 @@ app.use('/api/tmdb', validateApiKey, async (req: Request, res: Response) => {
   }
 });
 
-// Start server
-app.listen(PORT, () => {
-  console.log(`🚀 Backend proxy server running on http://localhost:${PORT}`);
-  console.log(`📡 Proxying TMDB API requests to ${TMDB_BASE_URL}`);
-  console.log(`🔑 API Key configured: ${TMDB_API_KEY ? '✅ Yes' : '❌ No'}`);
-  
-  if (!TMDB_API_KEY) {
-    console.warn('\n⚠️  WARNING: TMDB_API_KEY environment variable is not set!');
-    console.warn('   Create a .env file in the server directory with:');
-    console.warn('   TMDB_API_KEY=your_api_key_here\n');
-  }
-});
+// Start server only if not running in Vercel environment
+if (process.env.NODE_ENV !== 'production') {
+  app.listen(PORT, () => {
+    console.log(`🚀 Backend proxy server running on http://localhost:${PORT}`);
+    console.log(`📡 Proxying TMDB API requests to ${TMDB_BASE_URL}`);
+    console.log(`🔑 API Key configured: ${TMDB_API_KEY ? '✅ Yes' : '❌ No'}`);
+    
+    if (!TMDB_API_KEY) {
+      console.warn('\n⚠️  WARNING: TMDB_API_KEY environment variable is not set!');
+      console.warn('   Create a .env file in the server directory with:');
+      console.warn('   TMDB_API_KEY=your_api_key_here\n');
+    }
+  });
+}
+
+export default app;
