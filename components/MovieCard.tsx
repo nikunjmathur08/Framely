@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Play,
@@ -40,9 +40,23 @@ const MovieCard: React.FC<Props> = ({
     isInList,
     hoveredMovieId,
     setHoveredMovie,
+    openMoreInfo,
   } = useAppStore();
   const added = isInList(movie.id);
   const { trailer } = useTrailer(movie);
+  const [isDesktop, setIsDesktop] = useState(
+    window.matchMedia("(hover: hover) and (pointer: fine)").matches
+  );
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(hover: hover) and (pointer: fine)");
+    const handleChange = (e: MediaQueryListEvent) => {
+      setIsDesktop(e.matches);
+    };
+
+    mediaQuery.addEventListener("change", handleChange);
+    return () => mediaQuery.removeEventListener("change", handleChange);
+  }, []);
 
   // Only show hover state if this card is the globally hovered one
   const isHovered = hoveredMovieId === movie.id;
@@ -134,26 +148,42 @@ const MovieCard: React.FC<Props> = ({
       }`}
       style={{ zIndex: isHovered ? 999 : 10 }}
       onMouseEnter={() => {
-        hoverTimeout.current = setTimeout(() => setHoveredMovie(movie.id), 400);
+        if (isDesktop) {
+          hoverTimeout.current = setTimeout(
+            () => setHoveredMovie(movie.id),
+            400
+          );
+        }
       }}
       onMouseLeave={() => {
-        clearTimeout(hoverTimeout.current);
-        setHoveredMovie(null);
+        if (isDesktop) {
+          clearTimeout(hoverTimeout.current);
+          setHoveredMovie(null);
+        }
+      }}
+      onClick={() => {
+        if (!isDesktop) {
+          openMoreInfo(movie);
+        }
       }}
     >
       <motion.div
         className={`relative bg-[#181818] rounded-md shadow-2xl ${originClass}`}
         initial={{ scale: 1, y: 0 }}
-        whileHover={{
-          scale: 1.4,
-          y: -50,
-          transition: {
-            delay: 0.4,
-            duration: 0.3,
-            type: "tween",
-            ease: "easeInOut",
-          },
-        }}
+        whileHover={
+          isDesktop
+            ? {
+                scale: 1.4,
+                y: -50,
+                transition: {
+                  delay: 0.4,
+                  duration: 0.3,
+                  type: "tween",
+                  ease: "easeInOut",
+                },
+              }
+            : {}
+        }
         style={{
           position: "absolute",
           top: 0,
@@ -178,6 +208,13 @@ const MovieCard: React.FC<Props> = ({
                   iframeClassName="w-full h-full"
                   onEnd={(e) => e.target.playVideo()}
                 />
+                
+                {/* Click overlay to play movie on desktop */}
+                <div 
+                  className="absolute inset-0 z-40 cursor-pointer"
+                  onClick={handlePlay}
+                />
+
                 <button
                   onClick={(e) => {
                     e.stopPropagation();

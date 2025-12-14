@@ -102,6 +102,7 @@ const Banner: React.FC<BannerProps> = ({ movie, loading }) => {
             }}
             onReady={onPlayerReady}
             onEnd={onEnd}
+            onError={() => setIsPlaying(false)}
             className="w-full h-full scale-[1.4] origin-center"
             iframeClassName="w-full h-full"
           />

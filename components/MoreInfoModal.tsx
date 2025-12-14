@@ -20,12 +20,12 @@ import { useTvSeasonData } from "../hooks/useTvSeasonData";
 import YouTube, { YouTubeProps } from "react-youtube";
 
 const MoreInfoModal: React.FC = () => {
-  const { selectedMovie, closeMoreInfo, addToList, removeFromList, isInList } =
-    useAppStore();
+  const { selectedMovie, closeMoreInfo, addToList, removeFromList, isInList } = useAppStore();
   const navigate = useNavigate();
   const [isMuted, setIsMuted] = useState(true);
   const [selectedSeason, setSelectedSeason] = useState(1);
   const [player, setPlayer] = useState<any>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
 
   // Call hooks before early return - React Rules of Hooks
   const { trailer } = useTrailer(selectedMovie || { id: 0 });
@@ -54,6 +54,12 @@ const MoreInfoModal: React.FC = () => {
       document.body.style.overflow = "unset";
     };
   }, [selectedMovie, closeMoreInfo]);
+
+  useEffect(() => {
+    if (trailer) {
+      setIsPlaying(true);
+    }
+  }, [trailer]);
 
   if (!selectedMovie) return null;
 
@@ -131,15 +137,15 @@ const MoreInfoModal: React.FC = () => {
           {/* Close Button */}
           <button
             onClick={closeMoreInfo}
-            className="absolute top-4 right-4 z-50 bg-[#181818] rounded-full p-2 hover:bg-[#282828] transition"
+            className="absolute top-4 right-4 z-[100] bg-[#181818] rounded-full p-3.5 lg:p-2 lg:hover:bg-[#282828] transition"
           >
             <X className="w-6 h-6 text-white" />
           </button>
 
           {/* Video Background Section */}
-          <div className="relative w-full aspect-video bg-black">
+          <div className="relative w-full aspect-video bg-black overflow-hidden">
             <div className="relative w-full h-full">
-              {trailer ? (
+              {trailer && isPlaying ? (
                 <div className="w-full h-full relative">
                   <YouTube
                     videoId={trailer}
@@ -156,7 +162,9 @@ const MoreInfoModal: React.FC = () => {
                       },
                     }}
                     onReady={onPlayerReady}
-                    className="w-full h-full"
+                    onEnd={() => setIsPlaying(false)}
+                    onError={() => setIsPlaying(false)}
+                    className="w-full h-full scale-[1.4] origin-center"
                     iframeClassName="w-full h-full"
                   />
 
@@ -190,13 +198,13 @@ const MoreInfoModal: React.FC = () => {
             <div className="absolute inset-0 bg-gradient-to-t from-[#181818] via-transparent to-transparent pointer-events-none" />
 
             {/* Content Overlay on Video */}
-            <div className="absolute -bottom-4 -left-2 right-0 p-8 pb-16">
+            <div className="absolute -bottom-16 md:-bottom-4 -left-2 right-0 p-8 pb-16">
               {/* Title/Logo */}
               {logoPath ? (
                 <img
                   src={getImageUrl(logoPath, "w500")}
                   alt={displayTitle}
-                  className="w-2/3 max-w-md max-h-32 object-contain mb-6 drop-shadow-2xl"
+                  className="w-1/2 sm:w-2/3 md:w-full max-w-[180px] sm:max-w-xs md:max-w-md max-h-20 sm:max-h-28 md:max-h-40 object-contain mb-4 md:mb-6 drop-shadow-2xl"
                 />
               ) : (
                 <h1 className="text-4xl md:text-5xl font-bold text-white mb-6 drop-shadow-2xl">
@@ -208,29 +216,29 @@ const MoreInfoModal: React.FC = () => {
               <div className="flex items-center gap-3 mb-4">
                 <button
                   onClick={handlePlay}
-                  className="bg-white hover:bg-white/90 text-black font-bold px-8 py-3 rounded flex items-center gap-2 transition"
+                  className="bg-white hover:bg-white/90 text-black font-bold px-4 py-1.5 sm:px-6 sm:py-2 md:px-8 md:py-3 rounded flex items-center gap-2 transition text-xs sm:text-sm md:text-base"
                 >
-                  <Play className="w-6 h-6 fill-black" />
+                  <Play className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 fill-black" />
                   <span>Play</span>
                 </button>
 
                 <button
                   onClick={handleListToggle}
-                  className="border-2 border-gray-400 text-white hover:border-white transition rounded-full w-11 h-11 flex items-center justify-center bg-[#2a2a2a]/60"
+                  className="border-2 border-gray-400 text-white hover:border-white transition rounded-full w-8 h-8 sm:w-9 sm:h-9 md:w-11 md:h-11 flex items-center justify-center bg-[#2a2a2a]/60"
                   title={added ? "Remove from My List" : "Add to My List"}
                 >
                   {added ? (
-                    <Check className="w-5 h-5" />
+                    <Check className="w-4 h-4 sm:w-5 sm:h-5" />
                   ) : (
-                    <Plus className="w-5 h-5" />
+                    <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
                   )}
                 </button>
 
                 <button
-                  className="border-2 border-gray-400 text-white hover:border-white transition rounded-full w-11 h-11 flex items-center justify-center bg-[#2a2a2a]/60"
+                  className="border-2 border-gray-400 text-white hover:border-white transition rounded-full w-8 h-8 sm:w-9 sm:h-9 md:w-11 md:h-11 flex items-center justify-center bg-[#2a2a2a]/60"
                   title="Like"
                 >
-                  <ThumbsUp className="w-4 h-4" />
+                  <ThumbsUp className="w-3 h-3 sm:w-4 sm:h-4" />
                 </button>
               </div>
             </div>
