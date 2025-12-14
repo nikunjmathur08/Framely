@@ -25,21 +25,15 @@ const Home: React.FC = () => {
       <Navbar />
       <main className="relative pb-8 lg:space-y-6">
         <Banner movie={bannerMovie} loading={loading} />
-        <section className="space-y-0 -mt-32 md:-mt-48 relative z-20 pl-4 md:pl-0">
+        <section className="space-y-0 relative z-20">
           <Row title="Trending Now" movies={data.trending} loading={loading} />
           <Row title="Top Rated" movies={data.topRated} loading={loading} />
-          <Row
-            title="Action Thrillers"
-            movies={data.action}
-            loading={loading}
+          <Row title="Action Thrillers" movies={data.action} loading={loading}
           />
           <Row title="Comedies" movies={data.comedy} loading={loading} />
           <Row title="Scary Movies" movies={data.horror} loading={loading} />
           <Row title="Romance Movies" movies={data.romance} loading={loading} />
-          <Row
-            title="Documentaries"
-            movies={data.documentaries}
-            loading={loading}
+          <Row title="Documentaries" movies={data.documentaries} loading={loading}
           />
         </section>
       </main>

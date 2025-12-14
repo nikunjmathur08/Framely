@@ -74,7 +74,7 @@ const Banner: React.FC<BannerProps> = ({ movie, loading }) => {
 
   return (
     <header
-      className="relative h-[70vh] md:h-[85vh] object-cover"
+      className="relative h-[70vh] md:h-[85vh] object-cover overflow-hidden"
       style={{
         backgroundImage: `url("${getImageUrl(
           movie.backdrop_path,
@@ -117,18 +117,18 @@ const Banner: React.FC<BannerProps> = ({ movie, loading }) => {
       {isPlaying && trailer && (
         <button
           onClick={toggleMute}
-          className="absolute bottom-1/4 right-4 md:right-10 z-20 p-3 rounded-full border-2 border-white/60 bg-black/30 hover:bg-black/50 transition-all duration-300 hover:scale-110"
+          className="absolute bottom-1/4 right-2 sm:right-4 md:right-10 z-20 p-2 sm:p-2.5 md:p-3 rounded-full border-2 border-white/60 bg-black/30 hover:bg-black/50 transition-all duration-300 hover:scale-110"
           aria-label={isMuted ? "Unmute" : "Mute"}
         >
           {isMuted ? (
-            <VolumeX className="h-5 w-5 md:h-6 md:w-6 text-white" />
+            <VolumeX className="w-4 h-4 md:w-5 md:h-5 text-white" />
           ) : (
-            <Volume2 className="h-5 w-5 md:h-6 md:w-6 text-white" />
+            <Volume2 className="w-4 h-4 md:w-5 md:h-5 text-white" />
           )}
         </button>
       )}
 
-      <div className="relative flex flex-col justify-end h-full px-4 pb-24 space-y-4 md:px-10 lg:w-[60%] xl:w-[50%] z-10">
+      <div className="relative flex flex-col justify-end h-full px-4 pb-16 sm:pb-20 md:pb-24 space-y-2 sm:space-y-3 md:space-y-4 md:px-10 lg:w-[60%] xl:w-[50%] z-10">
         {movie.images?.logos && movie.images.logos.length > 0 ? (
           <img
             src={getImageUrl(
@@ -141,16 +141,16 @@ const Banner: React.FC<BannerProps> = ({ movie, loading }) => {
             alt={movie.title || movie.name || movie.original_name}
             className={`w-full object-contain drop-shadow-2xl transition-all duration-700 ${
               isPlaying
-                ? "max-w-xs md:max-w-sm"
-                : "max-w-md md:max-w-lg lg:max-w-xl"
+                ? "max-w-[200px] sm:max-w-xs md:max-w-sm"
+                : "max-w-[250px] sm:max-w-md md:max-w-lg lg:max-w-xl"
             }`}
           />
         ) : (
           <h1
             className={`font-bold text-white drop-shadow-lg transition-all duration-700 ${
               isPlaying
-                ? "text-2xl md:text-3xl lg:text-4xl"
-                : "text-3xl md:text-5xl lg:text-7xl"
+                ? "text-xl sm:text-2xl md:text-3xl lg:text-4xl"
+                : "text-2xl sm:text-3xl md:text-5xl lg:text-7xl"
             }`}
           >
             {movie.title || movie.name || movie.original_name}
@@ -158,24 +158,24 @@ const Banner: React.FC<BannerProps> = ({ movie, loading }) => {
         )}
 
         {!isPlaying && (
-          <p className="max-w-xs text-xs text-shadow-md text-white md:max-w-lg md:text-lg lg:max-w-2xl font-medium drop-shadow-md transition-opacity duration-500">
+          <p className="max-w-xs text-xs sm:text-sm text-shadow-md text-white md:max-w-lg md:text-lg lg:max-w-2xl font-medium drop-shadow-md transition-opacity duration-500">
             {truncate(movie.overview, 150)}
           </p>
         )}
 
-        <div className="flex space-x-3">
+        <div className="flex space-x-2 sm:space-x-3">
           <button
             onClick={handlePlay}
-            className="flex items-center gap-x-2 rounded px-5 py-2 text-sm font-semibold transition hover:opacity-75 md:px-8 md:py-2.5 bg-white text-black"
+            className="flex items-center gap-x-1 sm:gap-x-2 rounded px-3 py-1.5 sm:px-5 sm:py-2 text-xs sm:text-sm font-semibold transition hover:opacity-75 md:px-8 md:py-2.5 bg-white text-black"
           >
-            <Play className="h-5 w-5 fill-black" />
+            <Play className="h-4 w-4 sm:h-5 sm:w-5 fill-black" />
             Play
           </button>
           <button
             onClick={handleMoreInfo}
-            className="flex items-center gap-x-2 rounded px-5 py-2 text-sm font-semibold transition hover:opacity-75 md:px-8 md:py-2.5 bg-[gray]/70 text-white"
+            className="flex items-center gap-x-1 sm:gap-x-2 rounded px-3 py-1.5 sm:px-5 sm:py-2 text-xs sm:text-sm font-semibold transition hover:opacity-75 md:px-8 md:py-2.5 bg-[gray]/70 text-white"
           >
-            <Info className="h-5 w-5" />
+            <Info className="h-4 w-4 sm:h-5 sm:w-5" />
             More Info
           </button>
         </div>

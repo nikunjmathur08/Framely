@@ -128,7 +128,9 @@ const MovieCard: React.FC<Props> = ({
   return (
     <div
       className={`relative flex-none cursor-pointer px-0.5 pointer-events-auto ${
-        isLargeRow ? "w-[200px] h-[300px]" : "w-[260px] h-[160px]"
+        isLargeRow
+          ? "w-[140px] sm:w-[180px] h-[210px] sm:h-[270px]"
+          : "w-[140px] sm:w-[180px] md:w-[260px] h-[90px] sm:h-[115px] md:h-[160px]"
       }`}
       style={{ zIndex: isHovered ? 999 : 10 }}
       onMouseEnter={() => {
@@ -181,12 +183,12 @@ const MovieCard: React.FC<Props> = ({
                     e.stopPropagation();
                     toggleMute();
                   }}
-                  className="absolute bottom-2 right-2 z-50 p-1.5 rounded-full bg-black/50 hover:bg-black/70 text-white border border-white/30"
+                  className="absolute bottom-1 right-1 sm:bottom-2 sm:right-2 z-50 p-1 sm:p-1.5 rounded-full bg-black/50 hover:bg-black/70 text-white border border-white/30"
                 >
                   {isMuted ? (
-                    <VolumeX className="w-3 h-3" />
+                    <VolumeX className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                   ) : (
-                    <Volume2 className="w-3 h-3" />
+                    <Volume2 className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                   )}
                 </button>
               </div>
@@ -232,31 +234,31 @@ const MovieCard: React.FC<Props> = ({
               className="p-3 bg-[#181818] rounded-b-md absolute top-full left-0 w-full shadow-[0px_10px_20px_rgba(0,0,0,0.7)] z-50 flex flex-col gap-3"
             >
               {/* Action Buttons Row */}
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1 sm:gap-2">
                 <button
                   onClick={handlePlay}
-                  className="bg-white hover:bg-neutral-200 transition text-black rounded-full p-1 shadow-md flex items-center justify-center w-8 h-8"
+                  className="bg-white hover:bg-neutral-200 transition text-black rounded-full p-1 sm:p-1.5 shadow-md flex items-center justify-center w-6 h-6 sm:w-8 sm:h-8"
                 >
-                  <Play className="w-4 h-4 fill-black translate-x-0.5" />
+                  <Play className="w-3 h-3 sm:w-4 sm:h-4 fill-black translate-x-0.5" />
                 </button>
 
                 <button
                   onClick={handleListToggle}
-                  className="border-2 border-gray-500 text-gray-300 hover:border-white hover:text-white transition rounded-full w-8 h-8 flex items-center justify-center bg-[#2a2a2a]/60"
+                  className="border-2 border-gray-500 text-gray-300 hover:border-white hover:text-white transition rounded-full w-6 h-6 sm:w-8 sm:h-8 flex items-center justify-center bg-[#2a2a2a]/60"
                   title="Add to My List"
                 >
                   {added ? (
-                    <Check className="w-4 h-4" />
+                    <Check className="w-3 h-3 sm:w-4 sm:h-4" />
                   ) : (
-                    <Plus className="w-4 h-4" />
+                    <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
                   )}
                 </button>
 
                 <button
-                  className="border-2 border-gray-500 text-gray-300 hover:border-white hover:text-white transition rounded-full w-8 h-8 flex items-center justify-center bg-[#2a2a2a]/60"
+                  className="border-2 border-gray-500 text-gray-300 hover:border-white hover:text-white transition rounded-full w-6 h-6 sm:w-8 sm:h-8 flex items-center justify-center bg-[#2a2a2a]/60"
                   title="Like"
                 >
-                  <ThumbsUp className="w-3 h-3" />
+                  <ThumbsUp className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
                 </button>
 
                 <button
@@ -264,15 +266,15 @@ const MovieCard: React.FC<Props> = ({
                     e.stopPropagation();
                     useAppStore.getState().openMoreInfo(movie);
                   }}
-                  className="border-2 border-gray-500 text-gray-300 hover:border-white hover:text-white transition rounded-full w-8 h-8 ml-auto flex items-center justify-center bg-[#2a2a2a]/60"
+                  className="border-2 border-gray-500 text-gray-300 hover:border-white hover:text-white transition rounded-full w-6 h-6 sm:w-8 sm:h-8 ml-auto flex items-center justify-center bg-[#2a2a2a]/60"
                   title="More Info"
                 >
-                  <ChevronDown className="w-4 h-4" />
+                  <ChevronDown className="w-3 h-3 sm:w-4 sm:h-4" />
                 </button>
               </div>
 
               {/* Metadata Row */}
-              <div className="flex items-center gap-2 text-[10px] font-semibold flex-wrap">
+              <div className="flex items-center gap-1 sm:gap-2 text-[9px] sm:text-[10px] font-semibold flex-wrap">
                 <span className="text-[#46d369]">
                   {(movie.vote_average * 10).toFixed(0)}% Match
                 </span>

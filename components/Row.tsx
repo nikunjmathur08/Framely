@@ -27,14 +27,14 @@ const Row: React.FC<RowProps> = ({
   };
 
   return (
-    <div className="h-fit px-4 md:px-10 mb-8 -mt-20 md:-mt-24 group relative group-hover:z-50">
-      <h2 className="w-56 cursor-pointer text-sm font-semibold text-[#e5e5e5] transition duration-200 hover:text-white md:text-2xl mb-2">
+    <div className="h-fit px-2 sm:px-4 md:px-10 mb-6 sm:mb-8 -mt-20 md:-mt-24 first:-mt-10 md:first:-mt-12 group relative group-hover:z-50">
+      <h2 className="w-56 cursor-pointer text-sm font-semibold text-[#e5e5e5] transition duration-200 hover:text-white sm:text-lg md:text-2xl mb-3 sm:mb-4">
         {title}
       </h2>
 
       <div className="relative -ml-2 md:-ml-4">
         <ChevronLeft
-          className={`absolute top-0 bottom-0 left-2 z-40 m-auto h-9 w-9 cursor-pointer opacity-0 transition hover:scale-125 group-hover:opacity-100 ${
+          className={`absolute top-0 bottom-0 left-1 sm:left-2 z-40 m-auto h-7 w-7 sm:h-8 sm:w-8 md:h-9 md:w-9 cursor-pointer opacity-0 transition hover:scale-125 group-hover:opacity-100 ${
             !isMoved && "hidden"
           }`}
           onClick={() => handleClick("left")}
@@ -73,7 +73,7 @@ const Row: React.FC<RowProps> = ({
         </div>
 
         <ChevronRight
-          className="absolute top-0 bottom-0 right-2 z-40 m-auto h-9 w-9 cursor-pointer opacity-0 transition hover:scale-125 group-hover:opacity-100"
+          className="absolute top-0 bottom-0 right-1 sm:right-2 z-40 m-auto h-7 w-7 sm:h-8 sm:w-8 md:h-9 md:w-9 cursor-pointer opacity-0 transition hover:scale-125 group-hover:opacity-100"
           onClick={() => handleClick("right")}
         />
       </div>
