@@ -28,6 +28,22 @@ const MoreInfoModal: React.FC = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [startTime, setStartTime] = useState<number>(0); // Track where to start playback
 
+  // Memoize opts to prevent re-renders restarting the video
+  // MUST be before any conditional returns
+  const opts: YouTubeProps['opts'] = React.useMemo(() => ({
+    height: "100%",
+    width: "100%",
+    playerVars: {
+      autoplay: 1,
+      controls: 0,
+      modestbranding: 1,
+      // mute: isMuted ? 1 : 0, // Removed reactive mute to prevent reload
+      rel: 0,
+      fs: 0,
+      start: startTime > 0 ? Math.floor(startTime) : undefined,
+    },
+  }), [startTime]);
+
   // Call hooks before early return - React Rules of Hooks
   const { trailer } = useTrailer(selectedMovie || { id: 0 });
   const mediaType =
@@ -174,19 +190,7 @@ const MoreInfoModal: React.FC = () => {
                 <div className="w-full h-full relative">
                   <YouTube
                     videoId={trailer}
-                    opts={{
-                      height: "100%",
-                      width: "100%",
-                      playerVars: {
-                        autoplay: 1,
-                        controls: 0,
-                        modestbranding: 1,
-                        mute: isMuted ? 1 : 0,
-                        rel: 0,
-                        fs: 0,
-                        start: startTime > 0 ? Math.floor(startTime) : undefined,
-                      },
-                    }}
+                    opts={opts}
                     onReady={onPlayerReady}
                     onEnd={() => setIsPlaying(false)}
                     onError={() => setIsPlaying(false)}

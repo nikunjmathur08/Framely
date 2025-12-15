@@ -4,6 +4,7 @@ import { ArrowLeft } from 'lucide-react';
 import axios, { requests } from '../services/tmdb';
 import { TvShowDetails } from '../types';
 import ProtectedIframe from '../components/ProtectedIframe';
+import { useAppStore } from '../store/useAppStore';
 
 const Watch: React.FC = () => {
   const { type, id } = useParams<{ type: string; id: string }>();
@@ -11,9 +12,80 @@ const Watch: React.FC = () => {
   const [season, setSeason] = useState(1);
   const [episode, setEpisode] = useState(1);
   const [tvDetails, setTvDetails] = useState<TvShowDetails | null>(null);
+  const { updateWatchHistory, getWatchHistory } = useAppStore();
 
   // Validating type for TypeScript safety in logic
   const mediaType = type === 'tv' ? 'tv' : 'movie';
+
+  const lastUpdateRef = React.useRef<number>(0);
+
+  // Load history on mount
+  useEffect(() => {
+    if (id) {
+      const history = getWatchHistory(id);
+      if (history) {
+        if (history.season) setSeason(history.season);
+        if (history.episode) setEpisode(history.episode);
+      }
+    }
+  }, [id, getWatchHistory]);
+
+  const updateHistory = (newSeason: number | undefined, newEpisode: number | undefined, timestamp?: number, duration?: number) => {
+    if (id) {
+        // preserve existing season/episode if not provided
+        const currentHistory = getWatchHistory(id);
+        updateWatchHistory(id, { 
+            season: newSeason ?? currentHistory?.season, 
+            episode: newEpisode ?? currentHistory?.episode,
+            timestamp, 
+            duration 
+        });
+        console.log("Saving history:", { id, season: newSeason, episode: newEpisode, timestamp });
+    }
+  };
+
+  // Vidking Event Listener
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+        try {
+            // Vidking sends messages, sometimes as string, sometimes as object
+            let data = event.data;
+            if (typeof data === 'string') {
+                try {
+                    data = JSON.parse(data);
+                } catch {
+                    return; // Not a JSON message, ignore
+                }
+            }
+
+            if (data?.type === 'PLAYER_EVENT' && data?.data) {
+                const { event: playerEvent, currentTime, duration } = data.data;
+                
+                // We only care about specific events
+                if (['timeupdate', 'pause', 'ended'].includes(playerEvent)) {
+                    const now = Date.now();
+                    
+                    // Throttle updates for timeupdate to once every 5 seconds
+                    if (playerEvent === 'timeupdate') {
+                        if (now - lastUpdateRef.current < 5000) return;
+                        lastUpdateRef.current = now;
+                    }
+
+                    // Save to store
+                    // Note: We use the current state 'season' and 'episode' 
+                    // But for TV shows, the player might send them too in data.data.season/episode if supported
+                    // For now, relying on our state is safer for the active view
+                    updateHistory(season, episode, currentTime, duration);
+                }
+            }
+        } catch (err) {
+            console.error("Error processing player message", err);
+        }
+    };
+
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, [id, season, episode, updateHistory]); // Re-bind if season/episode changes to ensure correct values are saved
 
   useEffect(() => {
     if (mediaType === 'tv' && id) {
@@ -31,11 +103,22 @@ const Watch: React.FC = () => {
 
   const getSrc = () => {
     const baseUrl = 'https://www.vidking.net/embed';
-    if (mediaType === 'movie') {
-      return `${baseUrl}/movie/${id}`;
+    const history = id ? getWatchHistory(id) : undefined;
+    
+    // Check if we have a timestamp to resume from
+    // Only resume if timestamp > 60s and not near the end (heuristic)
+    let startParam = '';
+    if (history?.timestamp && history.timestamp > 10 && (!history.duration || history.timestamp < history.duration * 0.95)) {
+        startParam = `?start=${Math.floor(history.timestamp)}`;
     }
-    return `${baseUrl}/tv/${id}/${season}/${episode}`;
+
+    if (mediaType === 'movie') {
+      return `${baseUrl}/movie/${id}${startParam}`;
+    }
+    return `${baseUrl}/tv/${id}/${season}/${episode}${startParam}`;
   };
+
+  // ... (render)
 
   return (
     <div className="h-screen w-screen bg-black overflow-hidden flex flex-col">
@@ -57,8 +140,10 @@ const Watch: React.FC = () => {
                 <select 
                     value={season}
                     onChange={(e) => {
-                        setSeason(Number(e.target.value));
+                        const newSeason = Number(e.target.value);
+                        setSeason(newSeason);
                         setEpisode(1); // Reset episode when season changes
+                        updateHistory(newSeason, 1);
                     }}
                     className="bg-[#333] text-white p-2 rounded text-sm focus:outline-none focus:ring-2 focus:ring-red-600"
                 >
@@ -72,7 +157,11 @@ const Watch: React.FC = () => {
                 <label className="text-xs text-gray-400 uppercase font-bold mt-2">Episode</label>
                  <select 
                     value={episode}
-                    onChange={(e) => setEpisode(Number(e.target.value))}
+                    onChange={(e) => {
+                        const newEpisode = Number(e.target.value);
+                        setEpisode(newEpisode);
+                        updateHistory(season, newEpisode);
+                    }}
                      className="bg-[#333] text-white p-2 rounded text-sm focus:outline-none focus:ring-2 focus:ring-red-600"
                 >
                     {/* Heuristic: allow up to 50 episodes selection */}

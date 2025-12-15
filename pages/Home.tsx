@@ -2,7 +2,6 @@ import React, { useEffect, useCallback } from "react";
 import Navbar from "../components/Navbar";
 import Banner from "../components/Banner";
 import Row from "../components/Row";
-import Footer from "../components/Footer";
 import { useMovieData } from "../hooks/useMovieData";
 import { useAppStore } from "../store/useAppStore";
 
@@ -38,7 +37,6 @@ const Home: React.FC = () => {
           />
         </section>
       </main>
-      <Footer />
     </div>
   );
 };

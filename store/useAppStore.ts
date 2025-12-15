@@ -58,6 +58,10 @@ interface AppState {
     playbackTime?: number;
     wasMuted?: boolean;
   } | null) => void;
+  // Watch History State
+  watchHistory: Record<string, { season?: number; episode?: number; lastWatched: number; timestamp?: number; duration?: number }>;
+  updateWatchHistory: (id: number | string, data: { season?: number; episode?: number; timestamp?: number; duration?: number }) => void;
+  getWatchHistory: (id: number | string) => { season?: number; episode?: number; lastWatched: number; timestamp?: number; duration?: number } | undefined;
 }
 
 const CACHE_TTL = 30 * 60 * 1000; // 30 minutes in milliseconds
@@ -106,6 +110,17 @@ export const useAppStore = create<AppState>()(
       // Banner Trailer State
       bannerTrailerState: null,
       setBannerTrailerState: (state) => set({ bannerTrailerState: state }),
+
+      // Watch History
+      watchHistory: {},
+      updateWatchHistory: (id, data) =>
+        set((state) => ({
+          watchHistory: {
+            ...state.watchHistory,
+            [id]: { ...state.watchHistory[id], ...data, lastWatched: Date.now() },
+          },
+        })),
+      getWatchHistory: (id) => get().watchHistory[id],
 
       // My List actions
       addToList: (movie) => {
@@ -184,6 +199,7 @@ export const useAppStore = create<AppState>()(
       name: "framley-storage",
       partialize: (state) => ({
         myList: state.myList,
+        watchHistory: state.watchHistory,
       }),
     }
   )
