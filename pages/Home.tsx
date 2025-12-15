@@ -2,6 +2,7 @@ import React, { useEffect, useCallback } from "react";
 import Navbar from "../components/Navbar";
 import Banner from "../components/Banner";
 import Row from "../components/Row";
+import Footer from "../components/Footer";
 import { useMovieData } from "../hooks/useMovieData";
 import { useAppStore } from "../store/useAppStore";
 
@@ -21,9 +22,9 @@ const Home: React.FC = () => {
       : null;
 
   return (
-    <div className="relative h-screen bg-[#141414] lg:h-[140vh]">
+    <div className="relative min-h-screen bg-[#141414]">
       <Navbar />
-      <main className="relative pb-8 lg:space-y-6">
+      <main className="relative mb-24 pb-8 lg:space-y-6">
         <Banner movie={bannerMovie} loading={loading} />
         <section className="space-y-0 relative z-20">
           <Row title="Trending Now" movies={data.trending} loading={loading} />
@@ -37,6 +38,7 @@ const Home: React.FC = () => {
           />
         </section>
       </main>
+      <Footer />
     </div>
   );
 };
