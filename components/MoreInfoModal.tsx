@@ -230,7 +230,7 @@ const MoreInfoModal: React.FC = () => {
                 <img
                   src={getImageUrl(logoPath, "w500")}
                   alt={displayTitle}
-                  className="w-1/2 sm:w-2/3 md:w-full max-w-[180px] sm:max-w-xs md:max-w-md max-h-20 sm:max-h-28 md:max-h-40 object-contain mb-4 md:mb-6 drop-shadow-2xl"
+                  className="w-1/2 sm:w-2/3 md:w-full max-w-[180px] sm:max-w-xs md:max-w-md max-h-20 sm:max-h-28 object-contain mb-4 md:mb-6 drop-shadow-2xl"
                 />
               ) : (
                 <h1 className="text-4xl md:text-5xl font-bold text-white mb-6 drop-shadow-2xl">

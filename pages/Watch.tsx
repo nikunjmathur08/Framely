@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import axios, { requests } from '../services/tmdb';
 import { TvShowDetails } from '../types';
+import ProtectedIframe from '../components/ProtectedIframe';
 
 const Watch: React.FC = () => {
   const { type, id } = useParams<{ type: string; id: string }>();
@@ -38,24 +39,19 @@ const Watch: React.FC = () => {
 
   return (
     <div className="h-screen w-screen bg-black overflow-hidden flex flex-col">
-      {/* Navigation & Controls */}
-      <div className="fixed top-0 left-0 w-full z-50 p-4 flex items-center justify-between bg-gradient-to-b from-black/80 to-transparent">
-        <div className="flex items-center space-x-4">
-          <button 
-            onClick={() => navigate(-1)}
-            className="text-white hover:text-gray-300 transition"
-          >
-            <ArrowLeft className="w-8 h-8" />
-          </button>
-          <span className="text-white font-semibold text-lg hidden md:block">
-             Watching: {mediaType === 'tv' ? tvDetails?.name : 'Movie'}
-          </span>
-        </div>
+      {/* Back Button - Fixed Top Left */}
+      <div className="fixed top-4 left-4 z-[100]">
+        <button 
+          onClick={() => navigate(-1)}
+          className="text-white hover:text-gray-300 transition bg-black/50 backdrop-blur-sm rounded-full p-2 hover:bg-black/70"
+        >
+          <ArrowLeft className="w-8 h-8" />
+        </button>
       </div>
 
-      {/* TV Controls (Season/Episode) */}
+      {/* TV Controls (Season/Episode) - Fixed Bottom Right */}
       {mediaType === 'tv' && tvDetails && (
-         <div className="fixed bottom-10 right-10 z-50 bg-[#141414]/90 p-4 rounded-lg border border-gray-700 backdrop-blur-sm">
+         <div className="fixed bottom-10 right-10 z-[100] bg-[#141414]/95 p-4 rounded-lg border border-gray-700 backdrop-blur-sm">
              <div className="flex flex-col space-y-2">
                 <label className="text-xs text-gray-400 uppercase font-bold">Season</label>
                 <select 
@@ -64,7 +60,7 @@ const Watch: React.FC = () => {
                         setSeason(Number(e.target.value));
                         setEpisode(1); // Reset episode when season changes
                     }}
-                    className="bg-[#333] text-white p-1 rounded text-sm focus:outline-none focus:ring-1 focus:ring-red-600"
+                    className="bg-[#333] text-white p-2 rounded text-sm focus:outline-none focus:ring-2 focus:ring-red-600"
                 >
                     {tvDetails.seasons.map(s => (
                         <option key={s.id} value={s.season_number}>
@@ -77,10 +73,9 @@ const Watch: React.FC = () => {
                  <select 
                     value={episode}
                     onChange={(e) => setEpisode(Number(e.target.value))}
-                     className="bg-[#333] text-white p-1 rounded text-sm focus:outline-none focus:ring-1 focus:ring-red-600"
+                     className="bg-[#333] text-white p-2 rounded text-sm focus:outline-none focus:ring-2 focus:ring-red-600"
                 >
-                    {/* Heuristic: allow up to 50 episodes selection or check details if available. 
-                        For simplicity in this interface without fetching every season detail, we list 1-50 */}
+                    {/* Heuristic: allow up to 50 episodes selection */}
                     {Array.from({length: 50}, (_, i) => i + 1).map(num => (
                          <option key={num} value={num}>Episode {num}</option>
                     ))}
@@ -89,14 +84,11 @@ const Watch: React.FC = () => {
          </div>
       )}
 
-      {/* Iframe Player */}
+      {/* Protected Vidking Player */}
       <div className="flex-1 w-full h-full relative">
-        <iframe
+        <ProtectedIframe
           src={getSrc()}
-          className="w-full h-full border-0"
-          allowFullScreen
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          title="Video Player"
+          title={mediaType === 'tv' && tvDetails ? `${tvDetails.name} - S${season} E${episode}` : 'Movie'}
         />
       </div>
     </div>
