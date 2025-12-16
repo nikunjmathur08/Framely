@@ -30,7 +30,8 @@ const Watch: React.FC = () => {
     }
   }, [id, getWatchHistory]);
 
-  const updateHistory = (newSeason: number | undefined, newEpisode: number | undefined, timestamp?: number, duration?: number) => {
+  // Stable updateHistory function using useCallback
+  const updateHistory = React.useCallback((newSeason: number | undefined, newEpisode: number | undefined, timestamp?: number, duration?: number) => {
     if (id) {
         // preserve existing season/episode if not provided
         const currentHistory = getWatchHistory(id);
@@ -42,7 +43,7 @@ const Watch: React.FC = () => {
         });
         console.log("Saving history:", { id, season: newSeason, episode: newEpisode, timestamp });
     }
-  };
+  }, [id, getWatchHistory, updateWatchHistory]);
 
   // Vidking Event Listener
   useEffect(() => {
@@ -85,7 +86,7 @@ const Watch: React.FC = () => {
 
     window.addEventListener('message', handleMessage);
     return () => window.removeEventListener('message', handleMessage);
-  }, [id, season, episode, updateHistory]); // Re-bind if season/episode changes to ensure correct values are saved
+  }, [id, season, episode]); // updateHistory is now stable via useCallback
 
   useEffect(() => {
     if (mediaType === 'tv' && id) {
@@ -101,22 +102,39 @@ const Watch: React.FC = () => {
     }
   }, [mediaType, id]);
 
-  const getSrc = () => {
+  const getSrc = React.useMemo(() => {
     const baseUrl = 'https://www.vidking.net/embed';
     const history = id ? getWatchHistory(id) : undefined;
     
-    // Check if we have a timestamp to resume from
-    // Only resume if timestamp > 60s and not near the end (heuristic)
-    let startParam = '';
+    // Build URL parameters for Vidking player
+    const params = new URLSearchParams();
+    
+    // Brand color (Netflix red)
+    params.append('color', 'e50914');
+    
+    // Auto-play feature
+    params.append('autoPlay', 'true');
+    
+    // TV-specific features
+    if (mediaType === 'tv') {
+      params.append('nextEpisode', 'true');
+      params.append('episodeSelector', 'true');
+    }
+    
+    // Resume from last position (correct parameter name: progress, not start)
+    // Only resume if timestamp > 10s and not near the end (heuristic)
     if (history?.timestamp && history.timestamp > 10 && (!history.duration || history.timestamp < history.duration * 0.95)) {
-        startParam = `?start=${Math.floor(history.timestamp)}`;
+      params.append('progress', Math.floor(history.timestamp).toString());
     }
 
+    const queryString = params.toString();
+    const separator = queryString ? '?' : '';
+
     if (mediaType === 'movie') {
-      return `${baseUrl}/movie/${id}${startParam}`;
+      return `${baseUrl}/movie/${id}${separator}${queryString}`;
     }
-    return `${baseUrl}/tv/${id}/${season}/${episode}${startParam}`;
-  };
+    return `${baseUrl}/tv/${id}/${season}/${episode}${separator}${queryString}`;
+  }, [id, season, episode, mediaType, getWatchHistory]);
 
   // ... (render)
 
@@ -176,7 +194,7 @@ const Watch: React.FC = () => {
       {/* Protected Vidking Player */}
       <div className="flex-1 w-full h-full relative">
         <ProtectedIframe
-          src={getSrc()}
+          src={getSrc}
           title={mediaType === 'tv' && tvDetails ? `${tvDetails.name} - S${season} E${episode}` : 'Movie'}
         />
       </div>

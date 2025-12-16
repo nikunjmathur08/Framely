@@ -36,6 +36,7 @@ const Home: React.FC = () => {
           )}
           <Row title="Upcoming Movies & Shows" movies={data.upcoming} loading={loading} />
           <Row title="Top Rated" movies={data.topRated} loading={loading} />
+          <Row title="Popular in India" movies={data.hindi} loading={loading} />
           <Row title="Action Thrillers" movies={data.action} loading={loading}/>
           <Row title="Scary Movies" movies={data.horror} loading={loading} />
         </section>

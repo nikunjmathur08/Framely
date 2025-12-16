@@ -47,6 +47,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       documentaries: '/discover/movie?with_genres=99',
       upcomingMovies: '/movie/upcoming?language=en-US',
       upcomingTV: '/tv/on_the_air?language=en-US',
+      // Multi-language content
+      hindiMovies: '/discover/movie?with_original_language=hi&sort_by=popularity.desc',
+      hindiTV: '/discover/tv?with_original_language=hi&sort_by=popularity.desc',
+      koreanMovies: '/discover/movie?with_original_language=ko&sort_by=popularity.desc',
+      koreanTV: '/discover/tv?with_original_language=ko&sort_by=popularity.desc',
+      japaneseMovies: '/discover/movie?with_original_language=ja&sort_by=popularity.desc',
+      japaneseTV: '/discover/tv?with_original_language=ja&sort_by=popularity.desc',
     };
 
     const listPromises = Object.entries(requests).map(async ([key, url]) => {
@@ -109,6 +116,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       ...(finalData.upcomingMovies || []),
       ...(finalData.upcomingTV || [])
     ].sort(() => Math.random() - 0.5); // Shuffle mixed content
+
+    // Combine language-specific content
+    finalData.hindi = [
+      ...(finalData.hindiMovies || []),
+      ...(finalData.hindiTV || [])
+    ].sort(() => Math.random() - 0.5);
+
+    finalData.korean = [
+      ...(finalData.koreanMovies || []),
+      ...(finalData.koreanTV || [])
+    ].sort(() => Math.random() - 0.5);
+
+    finalData.japanese = [
+      ...(finalData.japaneseMovies || []),
+      ...(finalData.japaneseTV || [])
+    ].sort(() => Math.random() - 0.5);
 
     return res.status(200).json(finalData);
   } catch (error: any) {

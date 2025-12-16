@@ -90,6 +90,10 @@ app.get('/api/movies/homepage', validateApiKey, async (req: Request, res: Respon
       documentaries: '/discover/movie?with_genres=99',
       upcomingMovies: '/movie/upcoming?language=en-US',
       upcomingTV: '/tv/on_the_air?language=en-US',
+      // Multi-language content
+      hindiMovies: '/discover/movie?with_original_language=hi&sort_by=popularity.desc',
+      koreanMovies: '/discover/movie?with_original_language=ko&sort_by=popularity.desc',
+      koreanTV: '/discover/tv?with_original_language=ko&sort_by=popularity.desc',
     };
 
     const listPromises = Object.entries(requests).map(async ([key, url]) => {
@@ -155,6 +159,11 @@ app.get('/api/movies/homepage', validateApiKey, async (req: Request, res: Respon
       ...(finalData.upcomingMovies || []),
       ...(finalData.upcomingTV || [])
     ].sort(() => Math.random() - 0.5); // Shuffle mixed content
+
+    // Combine language-specific content
+    finalData.hindi = [
+      ...(finalData.hindiMovies || []),
+    ].sort(() => Math.random() - 0.5);
 
     // Cleanup intermediate keys if desired, or keep them. keeping them is fine/safer.
     // We send 'upcomingMovies' and 'upcomingTV' too, but frontend will likely just use 'upcoming'

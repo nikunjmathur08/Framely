@@ -12,6 +12,7 @@ export interface MovieData {
   romance: Movie[];
   documentaries: Movie[];
   upcoming: Movie[];
+  hindi: Movie[];
 }
 
 interface AppState {
@@ -76,6 +77,7 @@ const emptyMovieData: MovieData = {
   romance: [],
   documentaries: [],
   upcoming: [],
+  hindi: [],
 };
 
 export const useAppStore = create<AppState>()(
@@ -188,6 +190,7 @@ export const useAppStore = create<AppState>()(
             romance: Array.isArray(responseData.romance) ? responseData.romance : [],
             documentaries: Array.isArray(responseData.documentaries) ? responseData.documentaries : [],
             upcoming: Array.isArray(responseData.upcoming) ? responseData.upcoming : [],
+            hindi: Array.isArray(responseData.hindi) ? responseData.hindi : []
           };
 
           set({
