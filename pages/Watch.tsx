@@ -4,7 +4,9 @@ import { ArrowLeft } from 'lucide-react';
 import axios, { requests } from '../services/tmdb';
 import { TvShowDetails } from '../types';
 import ProtectedIframe from '../components/ProtectedIframe';
+import AdBlockerModal from '../components/AdBlockerModal';
 import { useAppStore } from '../store/useAppStore';
+import { shouldShowAdBlockerModal } from '../utils/adBlockerDetection';
 
 const Watch: React.FC = () => {
   const { type, id } = useParams<{ type: string; id: string }>();
@@ -12,7 +14,8 @@ const Watch: React.FC = () => {
   const [season, setSeason] = useState(1);
   const [episode, setEpisode] = useState(1);
   const [tvDetails, setTvDetails] = useState<TvShowDetails | null>(null);
-  const { updateWatchHistory, getWatchHistory } = useAppStore();
+  const [showAdBlockerModal, setShowAdBlockerModal] = useState(false);
+  const { updateWatchHistory, getWatchHistory, hideAdBlockerModal, setHideAdBlockerModal } = useAppStore();
 
   // Validating type for TypeScript safety in logic
   const mediaType = type === 'tv' ? 'tv' : 'movie';
@@ -29,6 +32,16 @@ const Watch: React.FC = () => {
       }
     }
   }, [id, getWatchHistory]);
+
+  // Check if we should show the ad blocker modal
+  useEffect(() => {
+    const checkAdBlocker = async () => {
+      const shouldShow = await shouldShowAdBlockerModal(hideAdBlockerModal);
+      setShowAdBlockerModal(shouldShow);
+    };
+    
+    checkAdBlocker();
+  }, [hideAdBlockerModal]);
 
   // Stable updateHistory function using useCallback
   const updateHistory = React.useCallback((newSeason: number | undefined, newEpisode: number | undefined, timestamp?: number, duration?: number) => {
@@ -140,6 +153,17 @@ const Watch: React.FC = () => {
 
   return (
     <div className="h-screen w-screen bg-black overflow-hidden flex flex-col">
+      {/* Ad Blocker Modal */}
+      {showAdBlockerModal && (
+        <AdBlockerModal
+          onClose={() => setShowAdBlockerModal(false)}
+          onDontShowAgain={() => {
+            setHideAdBlockerModal(true);
+            setShowAdBlockerModal(false);
+          }}
+        />
+      )}
+
       {/* Back Button - Fixed Top Left */}
       <div className="fixed top-4 left-4 z-[100]">
         <button 

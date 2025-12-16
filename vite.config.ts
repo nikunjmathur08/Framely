@@ -18,14 +18,6 @@ export default defineConfig(({ mode }) => {
         alias: {
           '@': path.resolve(__dirname, '.'),
         }
-      },
-      // Enable source maps for proper debugging
-      build: {
-        sourcemap: true, // Generate source maps for production builds
-      },
-      // Source maps are enabled by default in dev mode, but explicitly set it
-      css: {
-        devSourcemap: true
       }
     };
 });

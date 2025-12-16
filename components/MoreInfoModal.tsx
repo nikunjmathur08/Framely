@@ -99,6 +99,7 @@ const MoreInfoModal: React.FC = () => {
     selectedMovie.title || selectedMovie.name || selectedMovie.original_name;
 
   const handlePlay = () => {
+    closeMoreInfo();
     navigate(`/watch/${mediaType}/${selectedMovie.id}`);
   };
 

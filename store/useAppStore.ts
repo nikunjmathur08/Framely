@@ -64,6 +64,10 @@ interface AppState {
   watchHistory: Record<string, { season?: number; episode?: number; lastWatched: number; timestamp?: number; duration?: number }>;
   updateWatchHistory: (id: number | string, data: { season?: number; episode?: number; timestamp?: number; duration?: number }) => void;
   getWatchHistory: (id: number | string) => { season?: number; episode?: number; lastWatched: number; timestamp?: number; duration?: number } | undefined;
+
+  // Ad Blocker Modal Preference
+  hideAdBlockerModal: boolean;
+  setHideAdBlockerModal: (hide: boolean) => void;
 }
 
 const CACHE_TTL = 30 * 60 * 1000; // 30 minutes in milliseconds
@@ -125,6 +129,10 @@ export const useAppStore = create<AppState>()(
           },
         })),
       getWatchHistory: (id) => get().watchHistory[id],
+
+      // Ad Blocker Modal Preference
+      hideAdBlockerModal: false,
+      setHideAdBlockerModal: (hide: boolean) => set({ hideAdBlockerModal: hide }),
 
       // My List actions
       addToList: (movie) => {
@@ -218,6 +226,7 @@ export const useAppStore = create<AppState>()(
       partialize: (state) => ({
         myList: state.myList,
         watchHistory: state.watchHistory,
+        hideAdBlockerModal: state.hideAdBlockerModal,
       }),
     }
   )
