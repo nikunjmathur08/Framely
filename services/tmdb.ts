@@ -157,7 +157,7 @@ tmdb.interceptors.response.use(
     console.warn("TMDB API request failed. Using Mock Data.", error.message);
 
     // Mock Response Structure
-    const mockResponse = {
+    const mockResponse: any = {
       data: {
         results: MOCK_MOVIES,
       },
@@ -167,8 +167,43 @@ tmdb.interceptors.response.use(
       config: error.config,
     };
 
-    // Handle TV Details specifically
-    if (error.config.url && error.config.url.includes('/tv/') && !error.config.url.includes('discover')) {
+    // Handle TV Season Details specifically
+    if (error.config.url && error.config.url.includes('/season/')) {
+        const seasonMatch = error.config.url.match(/season\/(\d+)/);
+        const seasonNum = seasonMatch ? parseInt(seasonMatch[1]) : 1;
+        
+        // Find the season in mock details to get accurate count, or default to 8
+        const seasonInfo = MOCK_TV_DETAILS.seasons.find(s => s.season_number === seasonNum);
+        const episodeCount = seasonInfo ? seasonInfo.episode_count : 8;
+
+        mockResponse.data = {
+            _id: "mock_season_id",
+            air_date: "2024-01-01",
+            name: `Season ${seasonNum}`,
+            overview: seasonInfo?.overview || "",
+            id: seasonInfo?.id || 12345,
+            poster_path: seasonInfo?.poster_path || null,
+            season_number: seasonNum,
+            episodes: Array.from({ length: episodeCount }).map((_, i) => ({
+                air_date: "2024-01-01",
+                episode_number: i + 1,
+                id: 1000 + i,
+                name: `Episode ${i + 1}`,
+                overview: `This is a mock description for episode ${i + 1} of season ${seasonNum}.`,
+                production_code: "",
+                runtime: 45,
+                season_number: seasonNum,
+                show_id: 123,
+                still_path: null,
+                vote_average: 8.5,
+                vote_count: 100,
+                crew: [],
+                guest_stars: []
+            }))
+        };
+    }
+    // Handle TV Details (Show level)
+    else if (error.config.url && error.config.url.includes('/tv/') && !error.config.url.includes('discover')) {
        // Extracting just for logic, but we return a generic TV detail for any ID to prevent crashes
        mockResponse.data = attachMockImages(MOCK_TV_DETAILS);
     } 

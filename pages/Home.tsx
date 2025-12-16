@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback } from "react";
+import React, { useEffect, useCallback, useMemo } from "react";
 import Navbar from "../components/Navbar";
 import Banner from "../components/Banner";
 import Row from "../components/Row";
@@ -14,11 +14,15 @@ const Home: React.FC = () => {
     useAppStore.getState().fetchMovieData();
   }, []); // Empty deps - only run once on mount
 
-  // Select a random movie for the banner from trending
-  const bannerMovie =
-    data.trending.length > 0
+  // Select a random movie for the banner from trending - memoized to prevent re-selection on every render
+  const bannerMovie = useMemo(() => {
+    return data.trending.length > 0
       ? data.trending[Math.floor(Math.random() * data.trending.length)]
       : null;
+  }, [data.trending.length]); // Only recalculate when trending data changes
+
+  // Get My List from store
+  const { myList } = useAppStore();
 
   return (
     <div className="relative min-h-screen bg-[#141414]">
@@ -27,14 +31,13 @@ const Home: React.FC = () => {
         <Banner movie={bannerMovie} loading={loading} />
         <section className="space-y-0 relative z-20">
           <Row title="Trending Now" movies={data.trending} loading={loading} />
+          {myList.length > 0 && (
+            <Row title="My List" movies={myList} loading={false} />
+          )}
+          <Row title="Upcoming Movies & Shows" movies={data.upcoming} loading={loading} />
           <Row title="Top Rated" movies={data.topRated} loading={loading} />
-          <Row title="Action Thrillers" movies={data.action} loading={loading}
-          />
-          <Row title="Comedies" movies={data.comedy} loading={loading} />
+          <Row title="Action Thrillers" movies={data.action} loading={loading}/>
           <Row title="Scary Movies" movies={data.horror} loading={loading} />
-          <Row title="Romance Movies" movies={data.romance} loading={loading} />
-          <Row title="Documentaries" movies={data.documentaries} loading={loading}
-          />
         </section>
       </main>
     </div>

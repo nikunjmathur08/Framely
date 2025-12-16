@@ -28,7 +28,7 @@ const Row: React.FC<RowProps> = ({
 
   return (
     <div className="h-fit px-2 sm:px-4 md:px-10 mb-6 sm:mb-8 -mt-20 md:-mt-24 first:-mt-10 md:first:-mt-12 group relative group-hover:z-50">
-      <h2 className="w-56 cursor-pointer text-sm font-semibold text-[#e5e5e5] transition duration-200 hover:text-white sm:text-lg md:text-2xl mb-3 sm:mb-4">
+      <h2 className="w-auto cursor-pointer text-sm font-semibold text-[#e5e5e5] transition duration-200 hover:text-white sm:text-lg md:text-2xl mb-3 sm:mb-4">
         {title}
       </h2>
 
@@ -41,7 +41,7 @@ const Row: React.FC<RowProps> = ({
         />
         <div
           ref={rowRef}
-          className="flex items-center space-x-0.5 overflow-x-scroll scrollbar-hide md:space-x-1 px-2 md:px-4 pointer-events-none"
+          className="flex items-center space-x-0.5 overflow-x-scroll scrollbar-hide md:space-x-4 px-2 md:px-4 pointer-events-none"
           style={{
             scrollBehavior: "smooth",
             overflowY: "visible",

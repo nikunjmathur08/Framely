@@ -11,6 +11,7 @@ export interface MovieData {
   horror: Movie[];
   romance: Movie[];
   documentaries: Movie[];
+  upcoming: Movie[];
 }
 
 interface AppState {
@@ -74,6 +75,7 @@ const emptyMovieData: MovieData = {
   horror: [],
   romance: [],
   documentaries: [],
+  upcoming: [],
 };
 
 export const useAppStore = create<AppState>()(

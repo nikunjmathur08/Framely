@@ -13,6 +13,7 @@
   "dependencies": {
     "axios": "^1.13.2",
     "cors": "^2.8.5",
+    "dns-over-http-resolver": "^3.0.16",
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
     "framer-motion": "^12.23.25",

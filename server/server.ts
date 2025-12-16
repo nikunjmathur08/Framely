@@ -2,15 +2,44 @@ import express, { Request, Response } from 'express';
 import cors from 'cors';
 import axios from 'axios';
 import https from 'https';
+import * as dns from 'dns';
 import dotenv from 'dotenv';
+import Resolver from 'dns-over-http-resolver';
 
 // Load .env for local development (not used in Vercel)
 dotenv.config({ path: 'server/.env' });
-// Optimized HTTPS Agent for TMDB connectivity
+
+// ✨ DNS-over-HTTPS Resolver to bypass ISP DNS blocking
+// Uses Cloudflare's 1.1.1.1 DoH service programmatically
+const dohResolver = new Resolver();
+
+// Custom DNS lookup function that uses Cloudflare DoH
+async function customDnsLookup(hostname: string, options: any, callback: any) {
+  try {
+    console.log(`🔍 DNS-over-HTTPS lookup for: ${hostname}`);
+    const addresses = await dohResolver.resolve4(hostname);
+    
+    if (addresses && addresses.length > 0) {
+      const ip = addresses[0];
+      console.log(`✅ Resolved ${hostname} -> ${ip} via Cloudflare DoH`);
+      callback(null, ip, 4);
+    } else {
+      console.warn(`⚠️ No addresses found for ${hostname}, falling back to system DNS`);
+      dns.lookup(hostname, options, callback);
+    }
+  } catch (error: any) {
+    console.error(`❌ DoH lookup failed for ${hostname}:`, error.message);
+    // Fallback to system DNS if DoH fails
+    dns.lookup(hostname, options, callback);
+  }
+}
+
+// Optimized HTTPS Agent for TMDB connectivity with DNS-over-HTTPS
 const tmdbAgent = new https.Agent({
   keepAlive: true,
   family: 4, 
   timeout: 10000,
+  lookup: customDnsLookup as any, // Use our custom DoH lookup
 });
 
 // Import mock data with explicit .js extension for ES module compatibility
@@ -59,6 +88,8 @@ app.get('/api/movies/homepage', validateApiKey, async (req: Request, res: Respon
       horror: '/discover/movie?with_genres=27',
       romance: '/discover/movie?with_genres=10749',
       documentaries: '/discover/movie?with_genres=99',
+      upcomingMovies: '/movie/upcoming?language=en-US',
+      upcomingTV: '/tv/on_the_air?language=en-US',
     };
 
     const listPromises = Object.entries(requests).map(async ([key, url]) => {
@@ -119,6 +150,15 @@ app.get('/api/movies/homepage', validateApiKey, async (req: Request, res: Respon
         finalData[key] = listsMap[key].map((item: any) => detailsMap.get(item.id) || item);
     });
 
+    // Combine upcoming movies and TV into a single "upcoming" list
+    finalData.upcoming = [
+      ...(finalData.upcomingMovies || []),
+      ...(finalData.upcomingTV || [])
+    ].sort(() => Math.random() - 0.5); // Shuffle mixed content
+
+    // Cleanup intermediate keys if desired, or keep them. keeping them is fine/safer.
+    // We send 'upcomingMovies' and 'upcomingTV' too, but frontend will likely just use 'upcoming'
+
     res.json(finalData);
 
   } catch (error: any) {
@@ -135,12 +175,49 @@ app.get('/api/movies/homepage', validateApiKey, async (req: Request, res: Respon
           comedy: MOCK_MOVIES.results,
           horror: MOCK_MOVIES.results,
           romance: MOCK_MOVIES.results,
-          documentaries: MOCK_MOVIES.results
+          documentaries: MOCK_MOVIES.results,
+          upcoming: MOCK_MOVIES.results // Fallback for new row
       };
       return res.json(mockResult);
     }
 
     res.status(500).json({ error: 'Failed to fetch homepage data' });
+  }
+});
+
+
+// Endpoint to fetch trailer for a specific movie/TV show
+app.get('/api/trailer/:type/:id', validateApiKey, async (req: Request, res: Response) => {
+  try {
+    const { type, id } = req.params;
+    
+    if (!['movie', 'tv'].includes(type)) {
+      return res.status(400).json({ error: 'Invalid type. Must be "movie" or "tv"' });
+    }
+
+    console.log(`🎬 Fetching trailer for ${type}/${id}...`);
+    
+    const response = await axios.get(`${TMDB_BASE_URL}/${type}/${id}/videos`, {
+      params: { language: 'en-US' },
+      headers: { Authorization: `Bearer ${TMDB_API_KEY}` },
+      httpsAgent: tmdbAgent,
+      timeout: 8000
+    });
+
+    res.json(response.data);
+  } catch (error: any) {
+    console.error('Trailer fetch error:', error.message);
+    const isNetworkError = error.code === 'ECONNABORTED' || error.message.includes('timeout') || !error.response;
+    
+    if (isNetworkError) {
+      console.log('⚠️ Network blocked/timeout. Returning empty trailer data.');
+      return res.json({ results: [] });
+    }
+    
+    res.status(error.response?.status || 500).json({
+      error: 'Failed to fetch trailer',
+      message: error.message
+    });
   }
 });
 

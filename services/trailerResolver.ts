@@ -1,12 +1,8 @@
 import axios from "axios";
 
-const TMDB_API_KEY = import.meta.env.VITE_TMDB_API_KEY;
 const YT_API_KEY = import.meta.env.VITE_YT_API_KEY;
 
-console.log("[TrailerResolver] API Keys configured:", {
-  TMDB: !!TMDB_API_KEY,
-  YT: !!YT_API_KEY,
-});
+console.log("[TrailerResolver] YouTube API Key configured:", !!YT_API_KEY);
 
 const pickBest = (videos: any[]) => {
   if (!videos?.length) {
@@ -35,11 +31,6 @@ const pickBest = (videos: any[]) => {
 
 // Direct lookup: /movie/:id/videos OR /tv/:id/videos
 export const fetchTMDBDirect = async (movie: any) => {
-  if (!TMDB_API_KEY) {
-    console.error("[TrailerResolver] TMDB API key not configured!");
-    return null;
-  }
-
   const type = movie.media_type || (movie.name ? "tv" : "movie");
   console.log(
     `[TrailerResolver] fetchTMDBDirect - Type: ${type}, ID: ${
@@ -48,15 +39,14 @@ export const fetchTMDBDirect = async (movie: any) => {
   );
 
   try {
-    const url = `https://api.themoviedb.org/3/${type}/${movie.id}/videos`;
-    console.log(`[TrailerResolver] Fetching: ${url}?api_key=***`);
+    // Use backend proxy instead of direct TMDB call
+    const backendUrl = import.meta.env.VITE_BACKEND_URL || 
+                       (import.meta.env.PROD ? '' : 'http://localhost:3001');
+    const url = `${backendUrl}/api/trailer/${type}/${movie.id}`;
+    
+    console.log(`[TrailerResolver] Fetching via backend: ${url}`);
 
-    const { data } = await axios.get(url, {
-      params: {
-        api_key: TMDB_API_KEY,
-        language: "en-US",
-      },
-    });
+    const { data } = await axios.get(url);
 
     console.log(`[TrailerResolver] TMDB Direct response:`, data);
 
@@ -74,11 +64,6 @@ export const fetchTMDBDirect = async (movie: any) => {
 
 // TMDB Search fallback → get canonical entry instead
 export const fetchTMDBSearch = async (movie: any) => {
-  if (!TMDB_API_KEY) {
-    console.error("[TrailerResolver] TMDB API key not configured!");
-    return null;
-  }
-
   console.log(
     `[TrailerResolver] fetchTMDBSearch - Title: ${movie.title || movie.name}`
   );
@@ -90,12 +75,15 @@ export const fetchTMDBSearch = async (movie: any) => {
       return null;
     }
 
-    const searchUrl = `https://api.themoviedb.org/3/search/multi`;
-    console.log(`[TrailerResolver] Searching: ${searchUrl}?query=${title}`);
+    // Use backend proxy instead of direct TMDB calls
+    const backendUrl = import.meta.env.VITE_BACKEND_URL || 
+                       (import.meta.env.PROD ? '' : 'http://localhost:3001');
+    
+    const searchUrl = `${backendUrl}/api/tmdb/search/multi`;
+    console.log(`[TrailerResolver] Searching via backend: ${searchUrl}?query=${title}`);
 
     const search = await axios.get(searchUrl, {
       params: {
-        api_key: TMDB_API_KEY,
         query: title,
         language: "en-US",
       },
@@ -117,13 +105,9 @@ export const fetchTMDBSearch = async (movie: any) => {
 
     console.log(`[TrailerResolver] Best match:`, best);
 
-    const videosUrl = `https://api.themoviedb.org/3/${best.media_type}/${best.id}/videos`;
-    const { data } = await axios.get(videosUrl, {
-      params: {
-        api_key: TMDB_API_KEY,
-        language: "en-US",
-      },
-    });
+    // Use the trailer endpoint we just created
+    const videosUrl = `${backendUrl}/api/trailer/${best.media_type}/${best.id}`;
+    const { data } = await axios.get(videosUrl);
 
     const result = pickBest(data.results);
     console.log(`[TrailerResolver] TMDB Search result: ${result || "null"}`);
