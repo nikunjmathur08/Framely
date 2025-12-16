@@ -12,6 +12,9 @@ const Row: React.FC<RowProps> = ({
 }) => {
   const rowRef = useRef<HTMLDivElement>(null);
   const [isMoved, setIsMoved] = useState(false);
+  
+  // Safety check: ensure movies is always an array
+  const safeMovies = movies || [];
 
   const handleClick = (direction: "left" | "right") => {
     setIsMoved(true);
@@ -61,13 +64,13 @@ const Row: React.FC<RowProps> = ({
                   />
                 </div>
               ))
-            : movies.map((movie, index) => (
+            : safeMovies.map((movie, index) => (
                 <MovieCard
                   key={movie.id}
                   movie={movie}
                   isLargeRow={isLargeRow}
                   index={index}
-                  total={movies.length}
+                  total={safeMovies.length}
                 />
               ))}
         </div>

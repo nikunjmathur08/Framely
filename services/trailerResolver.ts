@@ -42,7 +42,11 @@ export const fetchTMDBDirect = async (movie: any) => {
     // Use backend proxy instead of direct TMDB call
     const backendUrl = import.meta.env.VITE_BACKEND_URL || 
                        (import.meta.env.PROD ? '' : 'http://localhost:3001');
-    const url = `${backendUrl}/api/trailer/${type}/${movie.id}`;
+    
+    // In production (Vercel), use query params; in dev, use path params
+    const url = import.meta.env.PROD 
+      ? `${backendUrl}/api/trailer?type=${type}&id=${movie.id}`
+      : `${backendUrl}/api/trailer/${type}/${movie.id}`;
     
     console.log(`[TrailerResolver] Fetching via backend: ${url}`);
 
@@ -106,7 +110,10 @@ export const fetchTMDBSearch = async (movie: any) => {
     console.log(`[TrailerResolver] Best match:`, best);
 
     // Use the trailer endpoint we just created
-    const videosUrl = `${backendUrl}/api/trailer/${best.media_type}/${best.id}`;
+    // In production (Vercel), use query params; in dev, use path params
+    const videosUrl = import.meta.env.PROD
+      ? `${backendUrl}/api/trailer?type=${best.media_type}&id=${best.id}`
+      : `${backendUrl}/api/trailer/${best.media_type}/${best.id}`;
     const { data } = await axios.get(videosUrl);
 
     const result = pickBest(data.results);

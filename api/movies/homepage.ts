@@ -45,6 +45,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       horror: '/discover/movie?with_genres=27',
       romance: '/discover/movie?with_genres=10749',
       documentaries: '/discover/movie?with_genres=99',
+      upcomingMovies: '/movie/upcoming?language=en-US',
+      upcomingTV: '/tv/on_the_air?language=en-US',
     };
 
     const listPromises = Object.entries(requests).map(async ([key, url]) => {
@@ -101,6 +103,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     Object.keys(listsMap).forEach(key => {
       finalData[key] = listsMap[key].map((item: any) => detailsMap.get(item.id) || item);
     });
+
+    // Combine upcoming movies and TV into a single "upcoming" list
+    finalData.upcoming = [
+      ...(finalData.upcomingMovies || []),
+      ...(finalData.upcomingTV || [])
+    ].sort(() => Math.random() - 0.5); // Shuffle mixed content
 
     return res.status(200).json(finalData);
   } catch (error: any) {

@@ -177,8 +177,21 @@ export const useAppStore = create<AppState>()(
             import.meta.env.VITE_BACKEND_URL || (import.meta.env.PROD ? '' : 'http://localhost:3001');
           const response = await axios.get(`${backendUrl}/api/movies/homepage`);
 
+          // Defensive: Ensure response has the expected structure
+          const responseData = response.data || {};
+          const safeData: MovieData = {
+            trending: Array.isArray(responseData.trending) ? responseData.trending : [],
+            topRated: Array.isArray(responseData.topRated) ? responseData.topRated : [],
+            action: Array.isArray(responseData.action) ? responseData.action : [],
+            comedy: Array.isArray(responseData.comedy) ? responseData.comedy : [],
+            horror: Array.isArray(responseData.horror) ? responseData.horror : [],
+            romance: Array.isArray(responseData.romance) ? responseData.romance : [],
+            documentaries: Array.isArray(responseData.documentaries) ? responseData.documentaries : [],
+            upcoming: Array.isArray(responseData.upcoming) ? responseData.upcoming : [],
+          };
+
           set({
-            movieData: response.data,
+            movieData: safeData,
             movieDataLoading: false,
             lastFetched: Date.now(),
             movieDataError: null,
