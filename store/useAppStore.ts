@@ -139,7 +139,7 @@ export const useAppStore = create<AppState>()(
       setHideAdBlockerModal: (hide: boolean) => set({ hideAdBlockerModal: hide }),
 
       // Player Selection
-      preferredPlayer: 'vidking',
+      preferredPlayer: 'mappleuk',
       setPreferredPlayer: (player: string) => set({ preferredPlayer: player }),
 
       // My List actions

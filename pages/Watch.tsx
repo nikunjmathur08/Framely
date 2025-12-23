@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Star, Calendar, Clock, ChevronDown } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import axios, { requests, getImageUrl, TMDB_GENRES } from '../services/tmdb';
 import { TvShowDetails, Movie, Season, Episode } from '../types';
 import ProtectedIframe from '../components/ProtectedIframe';
@@ -258,18 +259,31 @@ const Watch: React.FC = () => {
             {/* Player Switcher */}
             <div className="flex items-center gap-2">
               <span className="text-xs text-gray-500 font-bold uppercase tracking-widest mr-2">Player:</span>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-2 p-0.5 bg-[#0a0a0a] rounded-lg border border-[#242424]">
                 {PLAYER_CONFIGS.map(player => (
                   <button
                     key={player.id}
                     onClick={() => setPreferredPlayer(player.id)}
-                    className={`px-3 py-1 rounded-md text-[10px] uppercase font-bold tracking-wider transition-all duration-300 ${
-                      preferredPlayer === player.id
-                        ? 'bg-white text-black shadow-[0_0_15px_rgba(255,255,255,0.2)]'
-                        : 'border border-dashed border-white/20 text-gray-400 hover:border-white/40 hover:text-white'
-                    }`}
+                    className="relative px-4 py-1.5 rounded-md text-[10px] uppercase font-bold tracking-wider transition-colors duration-300 outline-none"
                   >
-                    {player.name}
+                    <span className={`relative z-10 transition-colors duration-300 ${
+                      preferredPlayer === player.id ? 'text-black' : 'text-gray-400 hover:text-white'
+                    }`}>
+                      {player.name}
+                    </span>
+                    
+                    {preferredPlayer === player.id && (
+                      <motion.div
+                        layoutId="activePlayerPill"
+                        className="absolute inset-0 bg-neutral-200 rounded-md shadow-[0_0_15px_rgba(229,229,229,0.15)]"
+                        transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                      />
+                    )}
+
+                    {/* Hover state for non-active buttons */}
+                    {preferredPlayer !== player.id && (
+                      <div className="absolute inset-0 rounded-md transition-colors duration-300" />
+                    )}
                   </button>
                 ))}
               </div>
@@ -302,7 +316,7 @@ const Watch: React.FC = () => {
 
           <div className="flex flex-wrap gap-2">
             {genres.slice(0, 3).map((genre, idx) => (
-              <span key={idx} className="px-3 py-1 bg-white/10 rounded-full text-xs font-medium">
+              <span key={idx} className="px-3 py-1 bg-white/5 rounded-full text-xs font-medium">
                 {genre}
               </span>
             ))}
