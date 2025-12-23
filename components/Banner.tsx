@@ -146,7 +146,7 @@ const Banner: React.FC<BannerProps> = ({ movie, loading }) => {
         </button>
       )}
 
-      <div className="relative flex flex-col justify-end h-full px-4 pb-16 sm:pb-20 md:pb-24 space-y-2 sm:space-y-3 md:space-y-4 md:px-10 lg:w-[60%] xl:w-[50%] z-10">
+      <div className="relative flex flex-col justify-end h-full px-4 pb-16 sm:pb-20 md:pb-24 space-y-2 sm:space-y-3 md:space-y-4 md:px-10 lg:w-[60%] xl:w-[50%] z-40">
         {movie.images?.logos && movie.images.logos.length > 0 ? (
           <img
             src={getImageUrl(

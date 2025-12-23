@@ -231,9 +231,9 @@ tmdb.interceptors.response.use(
 );
 
 export const requests = {
-  fetchTrending: `/trending/all/week?language=en-US`,
+  fetchTrending: `/trending/all/week`,
   fetchNetflixOriginals: `/discover/tv?with_networks=213`,
-  fetchTopRated: `/movie/top_rated?language=en-US`,
+  fetchTopRated: `/movie/top_rated`,
   fetchActionMovies: `/discover/movie?with_genres=28`,
   fetchComedyMovies: `/discover/movie?with_genres=35`,
   fetchHorrorMovies: `/discover/movie?with_genres=27`,
@@ -241,8 +241,8 @@ export const requests = {
   fetchDocumentaries: `/discover/movie?with_genres=99`,
   
   // TV Shows Specific
-  fetchTrendingTV: `/trending/tv/week?language=en-US`,
-  fetchTopRatedTV: `/tv/top_rated?language=en-US`,
+  fetchTrendingTV: `/trending/tv/week`,
+  fetchTopRatedTV: `/tv/top_rated`,
   fetchActionAdventureTV: `/discover/tv?with_genres=10759`,
   fetchComedyTV: `/discover/tv?with_genres=35`,
   fetchCrimeTV: `/discover/tv?with_genres=80`,
@@ -251,16 +251,17 @@ export const requests = {
   fetchSciFiFantasyTV: `/discover/tv?with_genres=10765`,
 
   // Movies Specific
-  fetchTrendingMovies: `/trending/movie/week?language=en-US`,
+  fetchTrendingMovies: `/trending/movie/week`,
   // (TopRated, Action, Comedy etc already exist reused)
 
   // New & Popular
-  fetchPopularMovies: `/movie/popular?language=en-US`,
-  fetchPopularTV: `/tv/popular?language=en-US`,
+  fetchPopularMovies: `/movie/popular`,
+  fetchPopularTV: `/tv/popular`,
 
-  search: `/search/multi?include_adult=false&language=en-US&page=1`,
-  getTvDetails: (id: string) => `/tv/${id}?language=en-US&append_to_response=images,videos`,
-  getMovieDetails: (id: string) => `/movie/${id}?language=en-US&append_to_response=images,videos`,
+  search: `/search/multi?include_adult=false&page=1`,
+  getTvDetails: (id: string) => `/tv/${id}?append_to_response=images,videos,credits`,
+  getMovieDetails: (id: string) => `/movie/${id}?append_to_response=images,videos,credits`,
+  getTvSeasonDetails: (id: string, seasonNumber: number) => `/tv/${id}/season/${seasonNumber}`,
 };
 
 export const getImageUrl = (path: string | null, size: 'original' | 'w500' = 'original') => {

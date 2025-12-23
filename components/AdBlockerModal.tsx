@@ -68,7 +68,7 @@ const AdBlockerModal: React.FC<AdBlockerModalProps> = ({ onClose, onDontShowAgai
                     href={extensionLinks[browser]}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-block border-2 border-white/40 text-white/60 hover:text-white hover:bg-white/80 hover:text-black ease-in-out transition-all px-4 py-2 rounded-md text-sm font-medium"
+                    className="inline-block border-2 border-white/40 text-white/60 hover:text-black hover:bg-white/80 hover:text-black ease-in-out transition-all px-4 py-2 rounded-md text-sm font-medium"
                   >
                     Install for {browser === 'chrome' ? 'Chrome' : browser === 'firefox' ? 'Firefox' : browser === 'edge' ? 'Edge' : browser === 'safari' ? 'Safari (AdGuard)' : 'Your Browser'}
                   </a>
@@ -85,7 +85,7 @@ const AdBlockerModal: React.FC<AdBlockerModalProps> = ({ onClose, onDontShowAgai
                     href="https://brave.com/download/"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-block border-2 border-white/40 text-white/60 hover:text-white hover:bg-white/80 hover:text-black ease-in-out transition-all px-4 py-2 rounded-md text-sm font-medium"
+                    className="inline-block border-2 border-white/40 text-white/60 hover:text-black hover:bg-white/80 hover:text-black ease-in-out transition-all px-4 py-2 rounded-md text-sm font-medium"
                   >
                     Download Brave
                   </a>

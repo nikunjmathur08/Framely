@@ -11,6 +11,7 @@ export interface Movie {
   first_air_date?: string;
   release_date?: string;
   media_type?: "movie" | "tv";
+  genres?: Genre[];
 
   // Detail fields populated by backend aggregation
   images?: {
