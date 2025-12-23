@@ -68,6 +68,10 @@ interface AppState {
   // Ad Blocker Modal Preference
   hideAdBlockerModal: boolean;
   setHideAdBlockerModal: (hide: boolean) => void;
+
+  // Player Selection
+  preferredPlayer: string;
+  setPreferredPlayer: (player: string) => void;
 }
 
 const CACHE_TTL = 30 * 60 * 1000; // 30 minutes in milliseconds
@@ -133,6 +137,10 @@ export const useAppStore = create<AppState>()(
       // Ad Blocker Modal Preference
       hideAdBlockerModal: false,
       setHideAdBlockerModal: (hide: boolean) => set({ hideAdBlockerModal: hide }),
+
+      // Player Selection
+      preferredPlayer: 'vidking',
+      setPreferredPlayer: (player: string) => set({ preferredPlayer: player }),
 
       // My List actions
       addToList: (movie) => {
@@ -227,6 +235,7 @@ export const useAppStore = create<AppState>()(
         myList: state.myList,
         watchHistory: state.watchHistory,
         hideAdBlockerModal: state.hideAdBlockerModal,
+        preferredPlayer: state.preferredPlayer,
       }),
     }
   )

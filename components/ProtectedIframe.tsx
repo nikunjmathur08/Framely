@@ -26,7 +26,6 @@ const ProtectedIframe: React.FC<ProtectedIframeProps> = React.memo(({
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
         title={title}
         referrerPolicy="no-referrer"
-        sandbox="allow-scripts allow-same-origin allow-forms allow-presentation allow-popups allow-popups-to-escape-sandbox"
       />
     </div>
   );

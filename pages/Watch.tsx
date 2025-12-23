@@ -8,6 +8,60 @@ import AdBlockerModal from '../components/AdBlockerModal';
 import { useAppStore } from '../store/useAppStore';
 import { shouldShowAdBlockerModal } from '../utils/adBlockerDetection';
 
+interface PlayerConfig {
+  id: string;
+  name: string;
+  getSrc: (type: 'tv' | 'movie', id: string, season: number, episode: number, progress?: number) => string;
+}
+
+const PLAYER_CONFIGS: PlayerConfig[] = [
+  {
+    id: 'vidking',
+    name: 'Vidking',
+    getSrc: (type, id, season, episode, progress) => {
+      const baseUrl = 'https://www.vidking.net/embed';
+      const params = new URLSearchParams({ color: 'e50914', autoPlay: 'true' });
+      if (type === 'tv') { params.append('nextEpisode', 'true'); params.append('episodeSelector', 'true'); }
+      if (progress && progress > 10) params.append('progress', Math.floor(progress).toString());
+      const path = type === 'movie' ? `movie/${id}` : `tv/${id}/${season}/${episode}`;
+      return `${baseUrl}/${path}?${params.toString()}`;
+    }
+  },
+  {
+    id: 'videasy',
+    name: 'Videasy',
+    getSrc: (type, id, season, episode, progress) => {
+      const baseUrl = 'https://player.videasy.net';
+      const params = new URLSearchParams({ color: 'e50914', nextEpisode: 'true', episodeSelector: 'true', autoplayNextEpisode: 'true', overlay: 'true' });
+      if (progress && progress > 10) params.append('progress', Math.floor(progress).toString());
+      const path = type === 'movie' ? `movie/${id}` : `tv/${id}/${season}/${episode}`;
+      return `${baseUrl}/${path}?${params.toString()}`;
+    }
+  },
+  {
+    id: 'vidplus',
+    name: 'VidPlus',
+    getSrc: (type, id, season, episode, progress) => {
+      const baseUrl = 'https://player.vidplus.to/embed';
+      const params = new URLSearchParams({ autoplay: 'true', nextButton: 'true' });
+      if (progress && progress > 10) params.append('progress', Math.floor(progress).toString());
+      const path = type === 'movie' ? `movie/${id}` : `tv/${id}/${season}/${episode}`;
+      return `${baseUrl}/${path}?${params.toString()}`;
+    }
+  },
+  {
+    id: 'mappleuk',
+    name: 'MappleUK',
+    getSrc: (type, id, season, episode, progress) => {
+      const baseUrl = 'https://mapple.uk/watch';
+      const params = new URLSearchParams({ autoPlay: 'true', nextButton: 'true', autoNext: 'true', theme: 'e50914' });
+      if (progress && progress > 10) params.append('startAt', Math.floor(progress).toString());
+      const path = type === 'movie' ? `movie/${id}` : `tv/${id}-${season}-${episode}`;
+      return `${baseUrl}/${path}?${params.toString()}`;
+    }
+  }
+];
+
 const Watch: React.FC = () => {
   const { type, id } = useParams<{ type: string; id: string }>();
   const navigate = useNavigate();
@@ -17,7 +71,14 @@ const Watch: React.FC = () => {
   const [movieDetails, setMovieDetails] = useState<Movie | null>(null);
   const [seasonDetails, setSeasonDetails] = useState<Season | null>(null);
   const [showAdBlockerModal, setShowAdBlockerModal] = useState(false);
-  const { updateWatchHistory, getWatchHistory, hideAdBlockerModal, setHideAdBlockerModal } = useAppStore();
+  const { 
+    updateWatchHistory, 
+    getWatchHistory, 
+    hideAdBlockerModal, 
+    setHideAdBlockerModal,
+    preferredPlayer,
+    setPreferredPlayer
+  } = useAppStore();
 
   const mediaType = type === 'tv' ? 'tv' : 'movie';
   const lastUpdateRef = useRef<number>(0);
@@ -54,27 +115,41 @@ const Watch: React.FC = () => {
     }
   }, [id, getWatchHistory, updateWatchHistory]);
 
-  // Vidking Event Listener
+  // Consolidated Event Listener
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
         try {
             let data = event.data;
+            
+            // Handle string data (Videasy sometimes sends strings)
             if (typeof data === 'string') {
-                try {
-                    data = JSON.parse(data);
-                } catch { return; }
+              try { data = JSON.parse(data); } catch { return; }
             }
 
-            if (data?.type === 'PLAYER_EVENT' && data?.data) {
-                const { event: playerEvent, currentTime, duration } = data.data;
-                if (['timeupdate', 'pause', 'ended'].includes(playerEvent)) {
-                    const now = Date.now();
-                    if (playerEvent === 'timeupdate') {
-                        if (now - lastUpdateRef.current < 5000) return;
-                        lastUpdateRef.current = now;
-                    }
-                    updateHistory(season, episode, currentTime, duration);
-                }
+            if (!data) return;
+
+            // Normalize event data across different players
+            let currentTime: number | undefined;
+            let duration: number | undefined;
+
+            // Vidking & MappleUK style
+            if (data.type === 'PLAYER_EVENT' && data.data) {
+              currentTime = data.data.currentTime;
+              duration = data.data.duration;
+            } 
+            // Videasy style (direct object)
+            else if (data.timestamp !== undefined && data.duration !== undefined) {
+              currentTime = data.timestamp;
+              duration = data.duration;
+            }
+
+            if (currentTime !== undefined) {
+                const now = Date.now();
+                // Throttle updates
+                if (now - lastUpdateRef.current < 5000) return;
+                lastUpdateRef.current = now;
+
+                updateHistory(season, episode, currentTime, duration);
             }
         } catch (err) {
             console.error("Error processing player message", err);
@@ -119,30 +194,17 @@ const Watch: React.FC = () => {
     }
   }, [mediaType, id, season]);
 
-  const getSrc = useMemo(() => {
-    const baseUrl = 'https://www.vidking.net/embed';
+  const currentSrc = useMemo(() => {
     const history = id ? getWatchHistory(id) : undefined;
-    const params = new URLSearchParams();
-    params.append('color', 'e50914');
-    params.append('autoPlay', 'true');
+    const config = PLAYER_CONFIGS.find(p => p.id === preferredPlayer) || PLAYER_CONFIGS[0];
     
-    if (mediaType === 'tv') {
-      params.append('nextEpisode', 'true');
-      params.append('episodeSelector', 'true');
-    }
-    
-    if (history?.timestamp && history.timestamp > 10 && (!history.duration || history.timestamp < history.duration * 0.95)) {
-      params.append('progress', Math.floor(history.timestamp).toString());
-    }
+    // Heuristic: only resume if not near the end
+    const progress = (history?.timestamp && (!history.duration || history.timestamp < history.duration * 0.95)) 
+      ? history.timestamp 
+      : 0;
 
-    const queryString = params.toString();
-    const separator = queryString ? '?' : '';
-
-    if (mediaType === 'movie') {
-      return `${baseUrl}/movie/${id}${separator}${queryString}`;
-    }
-    return `${baseUrl}/tv/${id}/${season}/${episode}${separator}${queryString}`;
-  }, [id, season, episode, mediaType, getWatchHistory]);
+    return config.getSrc(mediaType, id!, season, episode, progress);
+  }, [id, season, episode, mediaType, getWatchHistory, preferredPlayer]);
 
   const details = mediaType === 'tv' ? tvDetails : movieDetails;
   const releaseYear = (details?.release_date || details?.first_air_date)?.split('-')[0];
@@ -182,7 +244,7 @@ const Watch: React.FC = () => {
       {/* Player Section */}
       <div className="w-full aspect-video max-h-[70vh] bg-black relative shadow-2xl">
         <ProtectedIframe
-          src={getSrc}
+          src={currentSrc}
           title={mediaType === 'tv' && tvDetails ? `${tvDetails.name} - S${season} E${episode}` : (movieDetails?.title || 'Movie')}
         />
       </div>
@@ -190,7 +252,29 @@ const Watch: React.FC = () => {
       {/* Info Section */}
       <div className="max-w-8xl mx-auto w-full p-6 md:p-8 space-y-2">
         <div className="space-y-4">
-          <h1 className="text-3xl md:text-5xl font-bold">{details?.title || details?.name}</h1>
+          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+            <h1 className="text-3xl md:text-5xl font-bold">{details?.title || details?.name}</h1>
+            
+            {/* Player Switcher */}
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-gray-500 font-bold uppercase tracking-widest mr-2">Player:</span>
+              <div className="flex flex-wrap gap-2">
+                {PLAYER_CONFIGS.map(player => (
+                  <button
+                    key={player.id}
+                    onClick={() => setPreferredPlayer(player.id)}
+                    className={`px-3 py-1 rounded-md text-[10px] uppercase font-bold tracking-wider transition-all duration-300 ${
+                      preferredPlayer === player.id
+                        ? 'bg-white text-black shadow-[0_0_15px_rgba(255,255,255,0.2)]'
+                        : 'border border-dashed border-white/20 text-gray-400 hover:border-white/40 hover:text-white'
+                    }`}
+                  >
+                    {player.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
           
           <div className="flex flex-wrap items-center gap-4 text-sm md:text-base text-gray-400">
             {rating && (
@@ -237,7 +321,7 @@ const Watch: React.FC = () => {
 
         {/* TV Episodes Section */}
         {mediaType === 'tv' && tvDetails && (
-          <div className="space-y-6 pt-8 border-t border-white/10">
+          <div className="space-y-6 pt-10 border-t border-white/10 mt-8">
             <div className="flex items-center justify-between">
               <h2 className="text-2xl font-bold">Episodes</h2>
               
