@@ -140,6 +140,7 @@ const MovieCard: React.FC<Props> = ({
       ?.file_path || movie.images?.logos?.[0]?.file_path;
 
   const displayTitle = movie.title || movie.name || movie.original_name;
+  const [isImageLoaded, setIsImageLoaded] = useState(false);
 
   return (
     <div
@@ -164,6 +165,12 @@ const MovieCard: React.FC<Props> = ({
       onMouseLeave={() => {
         if (isDesktop) {
           clearTimeout(hoverTimeout.current);
+          setHoveredMovie(null);
+        }
+      }}
+      onScrollCapture={() => {
+        // Clear hover on scroll
+        if (isDesktop && isHovered) {
           setHoveredMovie(null);
         }
       }}
@@ -203,7 +210,7 @@ const MovieCard: React.FC<Props> = ({
             isHovered ? "rounded-b-none shadow-md" : ""
           }`}
         >
-          <div>
+          <div className="w-full h-full relative">
             {isHovered && trailer ? (
               <div className="w-full h-full absolute inset-0 bg-black">
                 <YouTube
@@ -236,17 +243,26 @@ const MovieCard: React.FC<Props> = ({
                 </button>
               </div>
             ) : (
-              <img
-                src={getImageUrl(
-                  isLargeRow
-                    ? movie.poster_path
-                    : movie.backdrop_path || movie.poster_path,
-                  "w500"
+              <>
+                {!isImageLoaded && (
+                  <div className="absolute inset-0 bg-[#2a2a2a] animate-pulse rounded-md" />
                 )}
-                alt={displayTitle}
-                className="w-full h-full object-cover"
-                loading="lazy"
-              />
+                <motion.img
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: isImageLoaded ? 1 : 0 }}
+                  transition={{ duration: 0.4 }}
+                  onLoad={() => setIsImageLoaded(true)}
+                  src={getImageUrl(
+                    isLargeRow
+                      ? movie.poster_path
+                      : movie.backdrop_path || movie.poster_path,
+                    "w500"
+                  )}
+                  alt={displayTitle}
+                  className="w-full h-full object-cover"
+                  loading="lazy"
+                />
+              </>
             )}
           </div>
 

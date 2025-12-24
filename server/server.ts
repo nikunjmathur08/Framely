@@ -5,6 +5,8 @@ import https from 'https';
 import * as dns from 'dns';
 import dotenv from 'dotenv';
 import Resolver from 'dns-over-http-resolver';
+import helmet from 'helmet';
+import { rateLimit } from 'express-rate-limit';
 
 // Load .env for local development (not used in Vercel)
 dotenv.config({ path: 'server/.env' });
@@ -51,8 +53,23 @@ const TMDB_API_KEY = process.env.TMDB_API_KEY || process.env.VITE_TMDB_API_KEY;
 const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
 
 // Middleware
+app.use(helmet({
+  contentSecurityPolicy: false, // Disabled for development/proxy flexibility
+  crossOriginEmbedderPolicy: false,
+}));
 app.use(cors());
 app.use(express.json());
+
+// Rate Limiting
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 1000, // Limit each IP to 1000 requests per windowMs
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many requests, please try again later.' }
+});
+
+app.use('/api/', limiter);
 
 // Validation middleware
 const validateApiKey = (req: Request, res: Response, next: Function) => {
