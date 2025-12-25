@@ -5,6 +5,7 @@ import Row from '../components/Row';
 import axios, { requests } from '../services/tmdb';
 import { Movie } from '../types';
 import { useSeo } from '../hooks/useSeo';
+import { logger } from "../utils/logger";
 
 interface BrowseProps {
   category: 'tv' | 'movie' | 'popular';
@@ -126,7 +127,7 @@ const Browse: React.FC<BrowseProps> = ({ category }) => {
 
         setData(reqs);
       } catch (error) {
-        console.error("Error fetching browse data:", error);
+        logger.error("Error fetching browse data:", error);
       } finally {
         setLoading(false);
       }

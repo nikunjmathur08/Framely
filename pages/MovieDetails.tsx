@@ -6,6 +6,7 @@ import axios, { requests, getImageUrl, TMDB_GENRES } from '../services/tmdb';
 import { Movie } from '../types';
 import { useAppStore } from '../store/useAppStore';
 import { useSeo } from '../hooks/useSeo';
+import { logger } from '../utils/logger';
 import { 
   generateMovieSchema, 
   generateBreadcrumbs, 
@@ -60,7 +61,7 @@ const MovieDetails: React.FC = () => {
           setRecommendations(movieData.recommendations.results.slice(0, 12));
         }
       } catch (error) {
-        console.error('Failed to fetch movie details:', error);
+        logger.error('Failed to fetch movie details:', error);
       } finally {
         setLoading(false);
       }

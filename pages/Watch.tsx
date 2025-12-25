@@ -10,6 +10,7 @@ import { useAppStore } from '../store/useAppStore';
 import { shouldShowAdBlockerModal } from '../utils/adBlockerDetection';
 import { useSeo } from '../hooks/useSeo';
 import { generateMovieSchema, generateTvSchema, getFullImageUrl } from '../utils/seoHelpers';
+import { logger } from '../utils/logger';
 
 interface PlayerConfig {
   id: string;
@@ -180,7 +181,7 @@ const Watch: React.FC = () => {
                 updateHistory(season, episode, currentTime, duration);
             }
         } catch (err) {
-            console.error("Error processing player message", err);
+            logger.error("Error processing player message", err);
         }
     };
 
@@ -201,7 +202,7 @@ const Watch: React.FC = () => {
           setMovieDetails(res.data);
         }
       } catch (err) {
-        console.error("Failed to fetch details", err);
+        logger.error(`Failed to fetch ${mediaType} details:`, err);
       }
     }
     fetchDetails();
@@ -215,7 +216,7 @@ const Watch: React.FC = () => {
           const res = await axios.get(requests.getTvSeasonDetails(id!, season));
           setSeasonDetails(res.data);
         } catch (err) {
-          console.error("Failed to fetch season details", err);
+          logger.error("Failed to fetch season details", err);
         }
       }
       fetchSeason();

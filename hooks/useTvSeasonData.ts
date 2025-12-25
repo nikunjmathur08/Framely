@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import tmdb from "../services/tmdb";
 import { Episode } from "../types";
+import { logger } from '../utils/logger';
 
 interface SeasonData {
   episodes: Episode[];
@@ -31,7 +32,7 @@ export const useTvSeasonData = (
 
         setEpisodes(response.data.episodes || []);
       } catch (err) {
-        console.error("Error fetching season data:", err);
+        logger.error("Error fetching season data:", err);
         setError("Failed to load episodes");
         setEpisodes([]);
       } finally {

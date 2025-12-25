@@ -39,7 +39,7 @@ const Row: React.FC<RowProps> = ({
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-100px" }}
       transition={{ duration: 0.8, ease: "easeOut" }}
-      className="h-fit px-2 sm:px-4 md:px-10 mb-6 sm:mb-8 -mt-20 md:-mt-24 first:-mt-10 md:first:-mt-12 group relative group-hover:z-50 pointer-events-none"
+      className="h-fit px-2 sm:px-4 md:px-10 mb-6 sm:mb-8 group relative group-hover:z-50 pointer-events-none first:-mt-20 md:first:-mt-24"
       aria-labelledby={sectionId}
     >
       <h2 

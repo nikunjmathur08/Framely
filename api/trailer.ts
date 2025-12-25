@@ -1,6 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import axios from 'axios';
 import https from 'https';
+import { logger } from '../utils/logger';
 
 const tmdbAgent = new https.Agent({
   keepAlive: true,
@@ -46,7 +47,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    console.log(`🎬 Fetching trailer for ${type}/${id}...`);
+    logger.log(`🎬 Fetching trailer for ${type}/${id}...`);
     
     const response = await axios.get(`${TMDB_BASE_URL}/${type}/${id}/videos`, {
       params: { language: 'en-US' },
@@ -57,7 +58,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     return res.status(200).json(response.data);
   } catch (error: any) {
-    console.error('Trailer fetch error:', error.message);
+    logger.error('Trailer fetch error:', error.message);
     
     if (error.response) {
       return res.status(error.response.status).json({

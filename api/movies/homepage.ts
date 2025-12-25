@@ -1,6 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import axios from 'axios';
 import https from 'https';
+import { logger } from '../../utils/logger';
 
 const tmdbAgent = new https.Agent({
   keepAlive: true,
@@ -30,12 +31,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    console.log('🚀 Fetching aggregated homepage data...');
-    console.log('Read Access Token source:', 
+    logger.log('🚀 Fetching aggregated homepage data...');
+    logger.log('Read Access Token source:', 
       process.env.TMDB_READ_ACCESS_TOKEN ? 'TMDB_READ_ACCESS_TOKEN' : 
       process.env.TMDB_API_KEY ? 'TMDB_API_KEY (fallback)' : 'VITE_TMDB_API_KEY (fallback)');
-    console.log('Token exists:', !!TMDB_READ_ACCESS_TOKEN);
-    console.log('Token prefix:', TMDB_READ_ACCESS_TOKEN ? TMDB_READ_ACCESS_TOKEN.substring(0, 10) : 'N/A');
+    logger.log('Token exists:', !!TMDB_READ_ACCESS_TOKEN);
+    logger.log('Token prefix:', TMDB_READ_ACCESS_TOKEN ? TMDB_READ_ACCESS_TOKEN.substring(0, 10) : 'N/A');
 
     const requests = {
       trending: '/trending/all/week?language=en-US',
@@ -63,11 +64,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           httpsAgent: tmdbAgent,
           timeout: 8000
         });
-        console.log(`✅ ${key}: fetched ${response.data.results?.length || 0} items`);
+        logger.log(`✅ ${key}: fetched ${response.data.results?.length || 0} items`);
         return { key, results: response.data.results || [] };
       } catch (e: any) {
-        console.error(`❌ Failed to fetch list ${key}:`, e.message);
-        console.error(`   Status: ${e.response?.status}, Data:`, e.response?.data);
+        logger.error(`❌ Failed to fetch list ${key}:`, e.message);
+        logger.error(`   Status: ${e.response?.status}, Data:`, e.response?.data);
         return { key, results: [] };
       }
     });
@@ -135,7 +136,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     return res.status(200).json(finalData);
   } catch (error: any) {
-    console.error('Homepage Error:', error.message);
+    logger.error('Homepage Error:', error.message);
     return res.status(500).json({ error: 'Failed to fetch homepage data' });
   }
 }

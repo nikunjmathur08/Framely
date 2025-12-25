@@ -1,30 +1,31 @@
 import axios from "axios";
+import { logger } from "../utils/logger";
 
 const YT_API_KEY = import.meta.env.VITE_YT_API_KEY;
 
-console.log("[TrailerResolver] YouTube API Key configured:", !!YT_API_KEY);
+logger.log("[TrailerResolver] YouTube API Key configured:", !!YT_API_KEY);
 
 const pickBest = (videos: any[]) => {
   if (!videos?.length) {
-    console.log("[TrailerResolver] No videos found in results");
+    logger.log("[TrailerResolver] No videos found in results");
     return null;
   }
 
-  console.log(`[TrailerResolver] Picking best from ${videos.length} videos`);
+  logger.log(`[TrailerResolver] Picking best from ${videos.length} videos`);
 
   const priority = ["Trailer", "Teaser", "Clip"];
 
   for (const type of priority) {
     const match = videos.find((v) => v.type === type && v.site === "YouTube");
     if (match) {
-      console.log(`[TrailerResolver] Found ${type}: ${match.key}`);
+      logger.log(`[TrailerResolver] Found ${type}: ${match.key}`);
       return match.key;
     }
   }
 
   const any = videos.find((v) => v.site === "YouTube");
   if (any) {
-    console.log(`[TrailerResolver] Found fallback video: ${any.key}`);
+    logger.log(`[TrailerResolver] Found fallback video: ${any.key}`);
   }
   return any?.key || null;
 };
@@ -32,7 +33,7 @@ const pickBest = (videos: any[]) => {
 // Direct lookup: /movie/:id/videos OR /tv/:id/videos
 export const fetchTMDBDirect = async (movie: any) => {
   const type = movie.media_type || (movie.name ? "tv" : "movie");
-  console.log(
+  logger.log(
     `[TrailerResolver] fetchTMDBDirect - Type: ${type}, ID: ${
       movie.id
     }, Title: ${movie.title || movie.name}`
@@ -48,17 +49,17 @@ export const fetchTMDBDirect = async (movie: any) => {
       ? `${backendUrl}/api/trailer?type=${type}&id=${movie.id}`
       : `${backendUrl}/api/trailer/${type}/${movie.id}`;
     
-    console.log(`[TrailerResolver] Fetching via backend: ${url}`);
+    logger.log(`[TrailerResolver] Fetching via backend: ${url}`);
 
     const { data } = await axios.get(url);
 
-    console.log(`[TrailerResolver] TMDB Direct response:`, data);
+    logger.log(`[TrailerResolver] TMDB Direct response:`, data);
 
     const result = pickBest(data.results);
-    console.log(`[TrailerResolver] TMDB Direct result: ${result || "null"}`);
+    logger.log(`[TrailerResolver] TMDB Direct result: ${result || "null"}`);
     return result;
   } catch (error: any) {
-    console.error(
+    logger.error(
       "[TrailerResolver] TMDB Direct error:",
       error.response?.data || error.message
     );
@@ -68,14 +69,14 @@ export const fetchTMDBDirect = async (movie: any) => {
 
 // TMDB Search fallback → get canonical entry instead
 export const fetchTMDBSearch = async (movie: any) => {
-  console.log(
+  logger.log(
     `[TrailerResolver] fetchTMDBSearch - Title: ${movie.title || movie.name}`
   );
 
   try {
     const title = movie.title || movie.name;
     if (!title) {
-      console.log("[TrailerResolver] No title available for search");
+      logger.log("[TrailerResolver] No title available for search");
       return null;
     }
 
@@ -84,7 +85,7 @@ export const fetchTMDBSearch = async (movie: any) => {
                        (import.meta.env.PROD ? '' : 'http://localhost:3001');
     
     const searchUrl = `${backendUrl}/api/tmdb/search/multi`;
-    console.log(`[TrailerResolver] Searching via backend: ${searchUrl}?query=${title}`);
+    logger.log(`[TrailerResolver] Searching via backend: ${searchUrl}?query=${title}`);
 
     const search = await axios.get(searchUrl, {
       params: {
@@ -93,13 +94,13 @@ export const fetchTMDBSearch = async (movie: any) => {
       },
     });
 
-    console.log(
+    logger.log(
       `[TrailerResolver] Search results:`,
       search.data.results?.slice(0, 3)
     );
 
     if (!search.data.results?.length) {
-      console.log("[TrailerResolver] No search results found");
+      logger.log("[TrailerResolver] No search results found");
       return null;
     }
 
@@ -107,7 +108,7 @@ export const fetchTMDBSearch = async (movie: any) => {
       search.data.results.find((r: any) => r.media_type === movie.media_type) ||
       search.data.results[0];
 
-    console.log(`[TrailerResolver] Best match:`, best);
+    logger.log(`[TrailerResolver] Best match:`, best);
 
     // Use the trailer endpoint we just created
     // In production (Vercel), use query params; in dev, use path params
@@ -117,10 +118,10 @@ export const fetchTMDBSearch = async (movie: any) => {
     const { data } = await axios.get(videosUrl);
 
     const result = pickBest(data.results);
-    console.log(`[TrailerResolver] TMDB Search result: ${result || "null"}`);
+    logger.log(`[TrailerResolver] TMDB Search result: ${result || "null"}`);
     return result;
   } catch (error: any) {
-    console.error(
+    logger.error(
       "[TrailerResolver] TMDB Search error:",
       error.response?.data || error.message
     );
@@ -132,7 +133,7 @@ export const fetchTMDBSearch = async (movie: any) => {
 
 export const fetchYouTubeFallback = async (movie: any) => {
   if (!YT_API_KEY) {
-    console.log("[TrailerResolver] YouTube API key not configured");
+    logger.log("[TrailerResolver] YouTube API key not configured");
     return null;
   }
 
@@ -141,11 +142,11 @@ export const fetchYouTubeFallback = async (movie: any) => {
     movie.release_date?.slice(0, 4) || movie.first_air_date?.slice(0, 4) || "";
 
   const query = `${title} ${year} official trailer`;
-  console.log(`[TrailerResolver] fetchYouTubeFallback - Query: ${query}`);
+  logger.log(`[TrailerResolver] fetchYouTubeFallback - Query: ${query}`);
 
   try {
     const ytUrl = `https://www.googleapis.com/youtube/v3/search`;
-    console.log(`[TrailerResolver] YouTube search initiated`);
+    logger.log(`[TrailerResolver] YouTube search initiated`);
 
     const { data } = await axios.get(ytUrl, {
       params: {
@@ -157,15 +158,15 @@ export const fetchYouTubeFallback = async (movie: any) => {
       },
     });
 
-    console.log(`[TrailerResolver] YouTube response:`, data);
+    logger.log(`[TrailerResolver] YouTube response:`, data);
 
     const result = data.items?.[0]?.id?.videoId || null;
-    console.log(
+    logger.log(
       `[TrailerResolver] YouTube Fallback result: ${result || "null"}`
     );
     return result;
   } catch (error: any) {
-    console.error(
+    logger.error(
       "[TrailerResolver] YouTube Fallback error:",
       error.response?.data || error.message
     );
@@ -174,7 +175,7 @@ export const fetchYouTubeFallback = async (movie: any) => {
 };
 
 export const resolveTrailer = async (movie: any) => {
-  console.log(
+  logger.log(
     `\n[TrailerResolver] ========== Resolving trailer for: ${
       movie.title || movie.name
     } (ID: ${movie.id}) ==========`
@@ -182,21 +183,21 @@ export const resolveTrailer = async (movie: any) => {
 
   let id = await fetchTMDBDirect(movie);
   if (id) {
-    console.log(`[TrailerResolver] ✓ Resolved via TMDB Direct: ${id}\n`);
+    logger.log(`[TrailerResolver] ✓ Resolved via TMDB Direct: ${id}\n`);
     return id;
   }
 
   id = await fetchTMDBSearch(movie);
   if (id) {
-    console.log(`[TrailerResolver] ✓ Resolved via TMDB Search: ${id}\n`);
+    logger.log(`[TrailerResolver] ✓ Resolved via TMDB Search: ${id}\n`);
     return id;
   }
 
   id = await fetchYouTubeFallback(movie);
   if (id) {
-    console.log(`[TrailerResolver] ✓ Resolved via YouTube: ${id}\n`);
+    logger.log(`[TrailerResolver] ✓ Resolved via YouTube: ${id}\n`);
   } else {
-    console.log(`[TrailerResolver] ✗ No trailer found\n`);
+    logger.log(`[TrailerResolver] ✗ No trailer found\n`);
   }
 
   return id || null;

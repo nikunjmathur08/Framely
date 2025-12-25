@@ -6,6 +6,7 @@ import { Movie } from '../types';
 import MovieCard from '../components/MovieCard';
 import Skeleton from '../components/Skeleton';
 import { useSeo } from '../hooks/useSeo';
+import { logger } from '../utils/logger';
 
 const Search: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -35,7 +36,7 @@ const Search: React.FC = () => {
           setLoading(false);
         })
         .catch(err => {
-          console.error(err);
+          logger.error(err);
           setLoading(false);
         });
     }

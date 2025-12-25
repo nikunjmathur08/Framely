@@ -5,7 +5,6 @@ import MoreInfoModal from './components/MoreInfoModal';
 import Home from './pages/Home';
 import Browse from './pages/Browse';
 
-// Lazy load less frequently accessed pages for code splitting
 const Watch = lazy(() => import('./pages/Watch'));
 const Search = lazy(() => import('./pages/Search'));
 const MyList = lazy(() => import('./pages/MyList'));

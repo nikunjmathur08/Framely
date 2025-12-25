@@ -5,6 +5,7 @@ import { Info, Play, PlayCircle, Volume2, VolumeX } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAppStore } from "../store/useAppStore";
 import { useTrailer } from "../hooks/useTrailer";
+import { logger } from "../utils/logger";
 import YouTube from "react-youtube";
 
 const Banner: React.FC<BannerProps> = ({ movie, loading }) => {
@@ -28,7 +29,7 @@ const Banner: React.FC<BannerProps> = ({ movie, loading }) => {
   };
 
   const onEnd = () => {
-    console.log("Trailer ended, reverting to static banner");
+    logger.log("Trailer ended, reverting to static banner");
     setIsPlaying(false);
     setIsMuted(true); // Reset mute state
   };

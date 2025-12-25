@@ -4,6 +4,7 @@ import axios from 'axios';
 import https from 'https';
 import * as dns from 'dns';
 import dotenv from 'dotenv';
+import { logger } from '../utils/logger';
 import Resolver from 'dns-over-http-resolver';
 import helmet from 'helmet';
 import { rateLimit } from 'express-rate-limit';
@@ -18,19 +19,19 @@ const dohResolver = new Resolver();
 // Custom DNS lookup function that uses Cloudflare DoH
 async function customDnsLookup(hostname: string, options: any, callback: any) {
   try {
-    console.log(`🔍 DNS-over-HTTPS lookup for: ${hostname}`);
+    logger.log(`🔍 DNS-over-HTTPS lookup for: ${hostname}`);
     const addresses = await dohResolver.resolve4(hostname);
     
     if (addresses && addresses.length > 0) {
       const ip = addresses[0];
-      console.log(`✅ Resolved ${hostname} -> ${ip} via Cloudflare DoH`);
+      logger.log(`✅ Resolved ${hostname} -> ${ip} via Cloudflare DoH`);
       callback(null, ip, 4);
     } else {
-      console.warn(`⚠️ No addresses found for ${hostname}, falling back to system DNS`);
+      logger.warn(`⚠️ No addresses found for ${hostname}, falling back to system DNS`);
       dns.lookup(hostname, options, callback);
     }
   } catch (error: any) {
-    console.error(`❌ DoH lookup failed for ${hostname}:`, error.message);
+    logger.error(`❌ DoH lookup failed for ${hostname}:`, error.message);
     // Fallback to system DNS if DoH fails
     dns.lookup(hostname, options, callback);
   }
@@ -94,7 +95,7 @@ app.get('/api/health', (req: Request, res: Response) => {
 // Endpoint to fetch ALL homepage data in one go (Fix 2: Clean Architecture)
 app.get('/api/movies/homepage', validateApiKey, async (req: Request, res: Response) => {
   try {
-    console.log('🚀 Fetching aggregated homepage data...');
+    logger.log('🚀 Fetching aggregated homepage data...');
     
     // 1. Fetch all lists in parallel
     const requests = {
@@ -121,7 +122,7 @@ app.get('/api/movies/homepage', validateApiKey, async (req: Request, res: Respon
             });
             return { key, results: response.data.results || [] };
         } catch (e: any) {
-            console.error(`Failed to fetch list ${key}:`, e.message);
+            logger.error(`Failed to fetch list ${key}:`, e.message);
             return { key, results: [] };
         }
     });
@@ -188,11 +189,11 @@ app.get('/api/movies/homepage', validateApiKey, async (req: Request, res: Respon
     res.json(finalData);
 
   } catch (error: any) {
-    console.error('Aggregated Homepage Error:', error.message);
+    logger.error('Aggregated Homepage Error:', error.message);
     const isNetworkError = error.code === 'ECONNABORTED' || error.message.includes('timeout');
     
      if (isNetworkError) {
-      console.log('⚠️ Network blocked/timeout. Serving AGGREGATED MOCK DATA.');
+      logger.log('⚠️ Network blocked/timeout. Serving AGGREGATED MOCK DATA.');
       // Construct fallback mock response matching the shape
       const mockResult = {
           trending: MOCK_MOVIES.results,
@@ -221,7 +222,7 @@ app.get('/api/trailer/:type/:id', validateApiKey, async (req: Request, res: Resp
       return res.status(400).json({ error: 'Invalid type. Must be "movie" or "tv"' });
     }
 
-    console.log(`🎬 Fetching trailer for ${type}/${id}...`);
+    logger.log(`🎬 Fetching trailer for ${type}/${id}...`);
     
     const response = await axios.get(`${TMDB_BASE_URL}/${type}/${id}/videos`, {
       params: { language: 'en-US' },
@@ -232,11 +233,11 @@ app.get('/api/trailer/:type/:id', validateApiKey, async (req: Request, res: Resp
 
     res.json(response.data);
   } catch (error: any) {
-    console.error('Trailer fetch error:', error.message);
+    logger.error('Trailer fetch error:', error.message);
     const isNetworkError = error.code === 'ECONNABORTED' || error.message.includes('timeout') || !error.response;
     
     if (isNetworkError) {
-      console.log('⚠️ Network blocked/timeout. Returning empty trailer data.');
+      logger.log('⚠️ Network blocked/timeout. Returning empty trailer data.');
       return res.json({ results: [] });
     }
     
@@ -271,7 +272,7 @@ app.use('/api/tmdb', validateApiKey, async (req: Request, res: Response) => {
   } catch (error: any) {
     const isNetworkError = error.code === 'ECONNABORTED' || error.message.includes('timeout') || !error.response;
     
-    console.error('TMDB API Error:', {
+    logger.error('TMDB API Error:', {
       url: `${TMDB_BASE_URL}/${req.path.substring(1)}`,
       error: error.message,
       code: error.code,
@@ -280,7 +281,7 @@ app.use('/api/tmdb', validateApiKey, async (req: Request, res: Response) => {
 
     if (isNetworkError) {
       // ✅ FALLBACK: Return mock data if network is blocked/timeout
-      console.log('⚠️ Network blocked/timeout. Serving MOCK DATA to frontend.');
+      logger.log('⚠️ Network blocked/timeout. Serving MOCK DATA to frontend.');
       return res.json(MOCK_MOVIES);
     }
     
@@ -301,14 +302,14 @@ app.use('/api/tmdb', validateApiKey, async (req: Request, res: Response) => {
 // Start server only if not running in Vercel environment
 if (process.env.NODE_ENV !== 'production') {
   app.listen(PORT, () => {
-    console.log(`🚀 Backend proxy server running on http://localhost:${PORT}`);
-    console.log(`📡 Proxying TMDB API requests to ${TMDB_BASE_URL}`);
-    console.log(`🔑 API Key configured: ${TMDB_API_KEY ? '✅ Yes' : '❌ No'}`);
+    logger.log(`🚀 Backend proxy server running on http://localhost:${PORT}`);
+    logger.log(`📡 Proxying TMDB API requests to ${TMDB_BASE_URL}`);
+    logger.log(`🔑 API Key configured: ${TMDB_API_KEY ? '✅ Yes' : '❌ No'}`);
     
     if (!TMDB_API_KEY) {
-      console.warn('\n⚠️  WARNING: TMDB_API_KEY environment variable is not set!');
-      console.warn('   Create a .env file in the server directory with:');
-      console.warn('   TMDB_API_KEY=your_api_key_here\n');
+      logger.warn('\n⚠️  WARNING: TMDB_API_KEY environment variable is not set!');
+      logger.warn('   Create a .env file in the server directory with:');
+      logger.warn('   TMDB_API_KEY=your_api_key_here\n');
     }
   });
 }

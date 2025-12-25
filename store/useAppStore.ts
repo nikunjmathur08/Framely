@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { Movie } from "../types";
 import axios from "axios";
+import { logger } from "../utils/logger";
 
 export interface MovieData {
   trending: Movie[];
@@ -61,9 +62,10 @@ interface AppState {
     wasMuted?: boolean;
   } | null) => void;
   // Watch History State
-  watchHistory: Record<string, { season?: number; episode?: number; lastWatched: number; timestamp?: number; duration?: number }>;
-  updateWatchHistory: (id: number | string, data: { season?: number; episode?: number; timestamp?: number; duration?: number }) => void;
-  getWatchHistory: (id: number | string) => { season?: number; episode?: number; lastWatched: number; timestamp?: number; duration?: number } | undefined;
+  watchHistory: Record<string, { season?: number; episode?: number; lastWatched: number; timestamp?: number; duration?: number; mediaType?: 'movie' | 'tv' }>;
+  updateWatchHistory: (id: number | string, data: { season?: number; episode?: number; timestamp?: number; duration?: number; mediaType?: 'movie' | 'tv' }) => void;
+  getWatchHistory: (id: number | string) => { season?: number; episode?: number; lastWatched: number; timestamp?: number; duration?: number; mediaType?: 'movie' | 'tv' } | undefined;
+  removeFromWatchHistory: (id: number | string) => void;
 
   // Ad Blocker Modal Preference
   hideAdBlockerModal: boolean;
@@ -133,6 +135,12 @@ export const useAppStore = create<AppState>()(
           },
         })),
       getWatchHistory: (id) => get().watchHistory[id],
+      removeFromWatchHistory: (id) =>
+        set((state) => {
+          const newHistory = { ...state.watchHistory };
+          delete newHistory[String(id)];
+          return { watchHistory: newHistory };
+        }),
 
       // Ad Blocker Modal Preference
       hideAdBlockerModal: false,
@@ -172,20 +180,20 @@ export const useAppStore = create<AppState>()(
 
         // Skip fetch if cache is fresh and not forced
         if (!force && isCacheFresh) {
-          console.log("✓ Using cached movie data (fresh)");
+          logger.log("✓ Using cached movie data (fresh)");
           return;
         }
 
         // Skip if already loading
         if (movieDataLoading) {
-          console.log("⏳ Movie data fetch already in progress");
+          logger.log("⏳ Movie data fetch already in progress");
           return;
         }
 
         // If cache exists but is stale, show cached data while fetching
         const hasCache = movieData.trending.length > 0;
         if (hasCache && !isCacheFresh) {
-          console.log("🔄 Cache stale, refreshing in background...");
+          logger.log("🔄 Cache stale, refreshing in background...");
         }
 
         try {
@@ -216,9 +224,9 @@ export const useAppStore = create<AppState>()(
             movieDataError: null,
           });
 
-          console.log("✅ Movie data fetched and cached successfully");
+          logger.log("✅ Movie data fetched and cached successfully");
         } catch (err) {
-          console.error("❌ Error fetching movie data:", err);
+          logger.error("❌ Error fetching movie data:", err);
           set({
             movieDataError:
               err instanceof Error

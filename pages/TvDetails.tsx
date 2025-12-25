@@ -6,6 +6,7 @@ import axios, { requests, getImageUrl, TMDB_GENRES } from '../services/tmdb';
 import { TvShowDetails, Movie } from '../types';
 import { useAppStore } from '../store/useAppStore';
 import { useSeo } from '../hooks/useSeo';
+import { logger } from '../utils/logger';
 import { 
   generateTvSchema, 
   generateBreadcrumbs, 
@@ -59,7 +60,7 @@ const TvDetails: React.FC = () => {
           setRecommendations(showData.recommendations.results.slice(0, 12));
         }
       } catch (error) {
-        console.error('Failed to fetch TV show details:', error);
+        logger.error('Failed to fetch TV show details:', error);
       } finally {
         setLoading(false);
       }

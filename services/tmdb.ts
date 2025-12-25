@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { TvShowDetails, Movie } from '../types';
+import { logger } from '../utils/logger';
 
 // Direct TMDB API calls with API key
 const TMDB_API_KEY = import.meta.env.VITE_TMDB_API_KEY;
@@ -154,7 +155,7 @@ tmdb.interceptors.response.use(
   (error) => {
     // Only intercept if it's a known API error or network error
     // We log it so developers know the API key might be missing
-    console.warn("TMDB API request failed. Using Mock Data.", error.message);
+    logger.warn("TMDB API request failed. Using Mock Data.", error.message);
 
     // Mock Response Structure
     const mockResponse: any = {

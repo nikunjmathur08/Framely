@@ -1,10 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { 
-  Play, 
-  Pause, 
-  Volume2, 
-  VolumeX, 
-  Maximize, 
+import { useAppStore } from '../store/useAppStore';
+import { DEFAULT_PLAYER } from '../constants';
+import { logger } from '../utils/logger';
+import {
+  Play,
+  Pause,
+  Volume2,
+  VolumeX,
+  Maximize,
   Minimize,
   SkipForward,
   SkipBack,
@@ -12,6 +15,7 @@ import {
   Loader2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { resolveTrailer } from '../services/trailerResolver';
 
 interface CustomVideoPlayerProps {
   src: string;
@@ -41,6 +45,7 @@ const CustomVideoPlayer: React.FC<CustomVideoPlayerProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
   const [showSpeedMenu, setShowSpeedMenu] = useState(false);
+  const [isTrailerPlaying, setIsTrailerPlaying] = useState(false); // Added for trailer logic
 
   const playbackSpeeds = [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2];
 
@@ -72,7 +77,7 @@ const CustomVideoPlayer: React.FC<CustomVideoPlayerProps> = ({
       setDuration(videoRef.current.duration);
       setIsLoading(false);
       if (autoPlay) {
-        videoRef.current.play().catch(console.error);
+        videoRef.current.play().catch(logger.error);
       }
     }
   };
@@ -87,6 +92,10 @@ const CustomVideoPlayer: React.FC<CustomVideoPlayerProps> = ({
   const handlePause = () => setIsPlaying(false);
   const handleWaiting = () => setIsLoading(true);
   const handleCanPlay = () => setIsLoading(false);
+  const handleTrailerEnd = () => {
+    setIsTrailerPlaying(false);
+    logger.log("Trailer ended, reverting to static banner");
+  };
 
   // Control functions
   const togglePlay = () => {
@@ -142,7 +151,7 @@ const CustomVideoPlayer: React.FC<CustomVideoPlayerProps> = ({
         }
       }
     } catch (error) {
-      console.error('Fullscreen error:', error);
+      logger.error('Fullscreen error:', error);
     }
   };
 
