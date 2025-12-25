@@ -96,46 +96,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-      tailwind.config = {
-        theme: {
-          extend: {
-            colors: {
-              'framely-red': '#E50914',
-              'framely-dark': '#141414',
-              'framely-gray': '#e5e5e5',
-            },
-            fontFamily: {
-              sans: ['Inter', 'sans-serif'],
-            }
-          }
-        },
-        plugins: [
-          function ({ addUtilities }) {
-            addUtilities({
-              '.scrollbar-hide': {
-                /* IE and Edge */
-                '-ms-overflow-style': 'none',
-                /* Firefox */
-                'scrollbar-width': 'none',
-                /* Safari and Chrome */
-                '&::-webkit-scrollbar': {
-                  display: 'none'
-                }
-              }
-            })
-          }
-        ]
-      }
-    </script>
-    <style>
-      body {
-        background-color: #141414;
-        color: white;
-      }
-    </style>
+    <!-- Tailwind CSS is now bundled via PostCSS -->
   <script type="importmap">
 {
   "imports": {

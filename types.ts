@@ -7,6 +7,7 @@ export interface Movie {
   poster_path: string | null;
   overview: string;
   vote_average: number;
+  vote_count?: number;
   genre_ids: number[];
   first_air_date?: string;
   release_date?: string;

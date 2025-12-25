@@ -4,9 +4,17 @@ import Banner from "../components/Banner";
 import Row from "../components/Row";
 import { useMovieData } from "../hooks/useMovieData";
 import { useAppStore } from "../store/useAppStore";
+import { useSeo } from "../hooks/useSeo";
 
 const Home: React.FC = () => {
   const { data, loading } = useMovieData();
+
+  // SEO for Home page
+  useSeo({
+    title: undefined, // Uses default title
+    description: 'Watch unlimited movies and TV shows on Framely. Stream trending content, top-rated movies, action thrillers and more.',
+    type: 'website',
+  });
 
   // Trigger fetch on mount - will use cache if fresh, or refresh if stale
   // Note: fetchMovieData is stable from the store, no dependencies needed

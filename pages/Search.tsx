@@ -5,12 +5,22 @@ import axios, { requests } from '../services/tmdb';
 import { Movie } from '../types';
 import MovieCard from '../components/MovieCard';
 import Skeleton from '../components/Skeleton';
+import { useSeo } from '../hooks/useSeo';
 
 const Search: React.FC = () => {
   const [searchParams] = useSearchParams();
   const query = searchParams.get('q');
   const [results, setResults] = useState<Movie[]>([]);
   const [loading, setLoading] = useState(false);
+
+  // SEO for Search page
+  useSeo({
+    title: query ? `Search: ${query}` : 'Search',
+    description: query 
+      ? `Search results for "${query}" on Framely. Find movies and TV shows matching your search.`
+      : 'Search for movies and TV shows on Framely. Find your favorite content to stream.',
+    type: 'website',
+  });
 
   useEffect(() => {
     if (query) {

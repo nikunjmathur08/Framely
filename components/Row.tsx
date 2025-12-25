@@ -30,15 +30,22 @@ const Row: React.FC<RowProps> = ({
     }
   };
 
+  // Generate unique ID for accessibility
+  const sectionId = `row-${title.toLowerCase().replace(/[^a-z0-9]/g, '-')}`;
+
   return (
-    <motion.div 
+    <motion.section 
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-100px" }}
       transition={{ duration: 0.8, ease: "easeOut" }}
       className="h-fit px-2 sm:px-4 md:px-10 mb-6 sm:mb-8 -mt-20 md:-mt-24 first:-mt-10 md:first:-mt-12 group relative group-hover:z-50 pointer-events-none"
+      aria-labelledby={sectionId}
     >
-      <h2 className="w-auto cursor-pointer text-sm font-semibold text-[#e5e5e5] transition duration-200 hover:text-white sm:text-lg md:text-2xl mb-3 sm:mb-4 pointer-events-auto inline-block">
+      <h2 
+        id={sectionId}
+        className="w-auto cursor-pointer text-sm font-semibold text-[#e5e5e5] transition duration-200 hover:text-white sm:text-lg md:text-2xl mb-3 sm:mb-4 pointer-events-auto inline-block"
+      >
         {title}
       </h2>
 
@@ -87,7 +94,7 @@ const Row: React.FC<RowProps> = ({
           onClick={() => handleClick("right")}
         />
       </div>
-    </motion.div>
+    </motion.section>
   );
 };
 

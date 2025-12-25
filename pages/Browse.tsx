@@ -1,13 +1,30 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import Navbar from '../components/Navbar';
 import Banner from '../components/Banner';
 import Row from '../components/Row';
 import axios, { requests } from '../services/tmdb';
 import { Movie } from '../types';
+import { useSeo } from '../hooks/useSeo';
 
 interface BrowseProps {
   category: 'tv' | 'movie' | 'popular';
 }
+
+// SEO configuration per category
+const SEO_BY_CATEGORY = {
+  tv: {
+    title: 'TV Shows',
+    description: 'Browse and stream the best TV shows on Framely. Watch trending series, top-rated dramas, comedy, action, and more.',
+  },
+  movie: {
+    title: 'Movies',
+    description: 'Discover and watch the latest movies on Framely. Stream action thrillers, comedies, horror, romance, and documentaries.',
+  },
+  popular: {
+    title: 'New & Popular',
+    description: 'Explore the most popular movies and TV shows right now on Framely. Trending content updated daily.',
+  },
+};
 
 interface CategoryData {
   trending: Movie[];
@@ -30,6 +47,14 @@ const Browse: React.FC<BrowseProps> = ({ category }) => {
     documentaries: []
   });
   const [loading, setLoading] = useState(true);
+
+  // SEO for Browse page based on category
+  const seoConfig = SEO_BY_CATEGORY[category];
+  useSeo({
+    title: seoConfig.title,
+    description: seoConfig.description,
+    type: 'website',
+  });
 
   useEffect(() => {
     const fetchData = async () => {

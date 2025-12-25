@@ -8,6 +8,8 @@ import ProtectedIframe from '../components/ProtectedIframe';
 import AdBlockerModal from '../components/AdBlockerModal';
 import { useAppStore } from '../store/useAppStore';
 import { shouldShowAdBlockerModal } from '../utils/adBlockerDetection';
+import { useSeo } from '../hooks/useSeo';
+import { generateMovieSchema, generateTvSchema, getFullImageUrl } from '../utils/seoHelpers';
 
 interface PlayerConfig {
   id: string;
@@ -83,6 +85,31 @@ const Watch: React.FC = () => {
 
   const mediaType = type === 'tv' ? 'tv' : 'movie';
   const lastUpdateRef = useRef<number>(0);
+
+  // Compute SEO data based on loaded details
+  const seoData = useMemo(() => {
+    const details = mediaType === 'tv' ? tvDetails : movieDetails;
+    if (!details) return null;
+    
+    const title = details.title || details.name || 'Watch';
+    const description = details.overview || `Watch ${title} on Framely`;
+    const image = getFullImageUrl(details.backdrop_path || details.poster_path, 'backdrop', 'large');
+    
+    return {
+      title: mediaType === 'tv' && season && episode 
+        ? `${title} - S${season} E${episode}` 
+        : title,
+      description,
+      image,
+      type: mediaType === 'tv' ? 'video.tv_show' as const : 'video.movie' as const,
+      jsonLd: mediaType === 'tv' && tvDetails 
+        ? generateTvSchema(tvDetails)
+        : movieDetails && generateMovieSchema(movieDetails),
+    };
+  }, [mediaType, tvDetails, movieDetails, season, episode]);
+
+  // Apply SEO
+  useSeo(seoData || {});
 
   // Load history on mount
   useEffect(() => {
