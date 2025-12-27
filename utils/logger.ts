@@ -4,9 +4,17 @@
  */
 
 // Handle different environment checks (Vite vs Node)
-const isDev = 
-  (typeof import.meta !== 'undefined' && import.meta.env?.DEV) || 
-  process.env.NODE_ENV === 'development';
+// Default to checking NODE_ENV (works in both environments)
+let isDev = process.env.NODE_ENV === 'development';
+
+// Try to use Vite's import.meta.env if available (client/Vite context)
+try {
+  if (typeof import.meta !== 'undefined' && (import.meta as any).env?.DEV) {
+    isDev = true;
+  }
+} catch {
+  // import.meta.env not available (Node.js serverless context)
+}
 
 export const logger = {
   /** Log message - dev only */
