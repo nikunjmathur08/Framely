@@ -54,11 +54,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       upcomingTV: '/tv/on_the_air?language=en-US',
       // Multi-language content
       hindiMovies: '/discover/movie?with_original_language=hi&sort_by=popularity.desc',
-      hindiTV: '/discover/tv?with_original_language=hi&sort_by=popularity.desc',
-      koreanMovies: '/discover/movie?with_original_language=ko&sort_by=popularity.desc',
-      koreanTV: '/discover/tv?with_original_language=ko&sort_by=popularity.desc',
-      japaneseMovies: '/discover/movie?with_original_language=ja&sort_by=popularity.desc',
-      japaneseTV: '/discover/tv?with_original_language=ja&sort_by=popularity.desc',
     };
 
     const listPromises = Object.entries(requests).map(async ([key, url]) => {
