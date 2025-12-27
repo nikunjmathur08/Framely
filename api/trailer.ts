@@ -1,7 +1,11 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import axios from 'axios';
 import https from 'https';
-import { logger } from '../utils/serverLogger';
+
+// Inline logger to avoid external import bundling issues on Vercel
+const isDev = process.env.NODE_ENV === 'development';
+const log = (...args: unknown[]) => { if (isDev) console.log(...args); };
+const logError = (...args: unknown[]) => { console.error(...args); };
 
 const tmdbAgent = new https.Agent({
   keepAlive: true,
@@ -47,7 +51,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    logger.log(`🎬 Fetching trailer for ${type}/${id}...`);
+    log(`🎬 Fetching trailer for ${type}/${id}...`);
     
     const response = await axios.get(`${TMDB_BASE_URL}/${type}/${id}/videos`, {
       params: { language: 'en-US' },
@@ -58,7 +62,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     return res.status(200).json(response.data);
   } catch (error: any) {
-    logger.error('Trailer fetch error:', error.message);
+    logError('Trailer fetch error:', error.message);
     
     if (error.response) {
       return res.status(error.response.status).json({

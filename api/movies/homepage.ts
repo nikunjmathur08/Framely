@@ -1,7 +1,11 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import axios from 'axios';
 import https from 'https';
-import { logger } from '../../utils/serverLogger';
+
+// Inline logger to avoid external import bundling issues on Vercel
+const isDev = process.env.NODE_ENV === 'development';
+const log = (...args: unknown[]) => { if (isDev) console.log(...args); };
+const logError = (...args: unknown[]) => { console.error(...args); };
 
 const tmdbAgent = new https.Agent({
   keepAlive: true,
@@ -31,12 +35,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    logger.log('🚀 Fetching aggregated homepage data...');
-    logger.log('Read Access Token source:', 
+    log('🚀 Fetching aggregated homepage data...');
+    log('Read Access Token source:', 
       process.env.TMDB_READ_ACCESS_TOKEN ? 'TMDB_READ_ACCESS_TOKEN' : 
       process.env.TMDB_API_KEY ? 'TMDB_API_KEY (fallback)' : 'VITE_TMDB_API_KEY (fallback)');
-    logger.log('Token exists:', !!TMDB_READ_ACCESS_TOKEN);
-    logger.log('Token prefix:', TMDB_READ_ACCESS_TOKEN ? TMDB_READ_ACCESS_TOKEN.substring(0, 10) : 'N/A');
+    log('Token exists:', !!TMDB_READ_ACCESS_TOKEN);
+    log('Token prefix:', TMDB_READ_ACCESS_TOKEN ? TMDB_READ_ACCESS_TOKEN.substring(0, 10) : 'N/A');
 
     const requests = {
       trending: '/trending/all/week?language=en-US',
@@ -64,11 +68,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           httpsAgent: tmdbAgent,
           timeout: 8000
         });
-        logger.log(`✅ ${key}: fetched ${response.data.results?.length || 0} items`);
+        log(`✅ ${key}: fetched ${response.data.results?.length || 0} items`);
         return { key, results: response.data.results || [] };
       } catch (e: any) {
-        logger.error(`❌ Failed to fetch list ${key}:`, e.message);
-        logger.error(`   Status: ${e.response?.status}, Data:`, e.response?.data);
+        logError(`❌ Failed to fetch list ${key}:`, e.message);
+        logError(`   Status: ${e.response?.status}, Data:`, e.response?.data);
         return { key, results: [] };
       }
     });
@@ -136,7 +140,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     return res.status(200).json(finalData);
   } catch (error: any) {
-    logger.error('Homepage Error:', error.message);
+    logError('Homepage Error:', error.message);
     return res.status(500).json({ error: 'Failed to fetch homepage data' });
   }
 }
