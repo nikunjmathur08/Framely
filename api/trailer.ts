@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import axios from 'axios';
 import https from 'https';
-import { logger } from '../utils/logger';
+import { logger } from '../utils/serverLogger';
 
 const tmdbAgent = new https.Agent({
   keepAlive: true,
