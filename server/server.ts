@@ -231,6 +231,186 @@ app.get('/api/movies/homepage', validateApiKey, async (req: Request, res: Respon
   }
 });
 
+// Helper function to enrich items with full details (images, etc.)
+async function enrichWithDetails(items: any[], type: 'tv' | 'movie'): Promise<any[]> {
+  const uniqueIds = [...new Set(items.map(item => item.id))];
+  
+  const detailPromises = uniqueIds.map(async (id) => {
+    try {
+      const endpoint = type === 'tv' ? `/tv/${id}` : `/movie/${id}`;
+      const response = await retryAxiosRequest(() =>
+        axios.get(`${TMDB_BASE_URL}${endpoint}?append_to_response=images`, {
+          headers: { Authorization: `Bearer ${TMDB_API_KEY}` },
+          httpsAgent: tmdbAgent,
+          timeout: 15000
+        })
+      );
+      return response.data;
+    } catch (e: any) {
+      return null;
+    }
+  });
+
+  const details = await Promise.all(detailPromises);
+  const detailsMap = new Map();
+  details.forEach(detail => {
+    if (detail) detailsMap.set(detail.id, detail);
+  });
+
+  return items.map(item => detailsMap.get(item.id) || item);
+}
+
+// Endpoint for TV Shows browse page (with logos)
+app.get('/api/browse/tv', validateApiKey, async (req: Request, res: Response) => {
+  try {
+    logger.log('📺 Fetching TV Shows browse data...');
+    
+    const requests = {
+      trending: '/trending/tv/week?language=en-US',
+      topRated: '/tv/top_rated?language=en-US',
+      action: '/discover/tv?with_genres=10759', // Action & Adventure
+      comedy: '/discover/tv?with_genres=35',
+      horror: '/discover/tv?with_genres=80', // Crime
+      romance: '/discover/tv?with_genres=18', // Drama
+      documentaries: '/discover/tv?with_genres=10765', // Sci-Fi & Fantasy
+    };
+
+    const listPromises = Object.entries(requests).map(async ([key, url]) => {
+      try {
+        const response = await retryAxiosRequest(() =>
+          axios.get(`${TMDB_BASE_URL}${url}`, {
+            headers: { Authorization: `Bearer ${TMDB_API_KEY}` },
+            httpsAgent: tmdbAgent,
+            timeout: 15000
+          })
+        );
+        return { key, results: response.data.results || [] };
+      } catch (e: any) {
+        logger.error(`Failed to fetch TV list ${key}:`, e.message);
+        return { key, results: [] };
+      }
+    });
+
+    const listsResults = await Promise.all(listPromises);
+    const listsMap: Record<string, any[]> = {};
+    listsResults.forEach(({ key, results }) => { listsMap[key] = results; });
+
+    // Enrich all items with details (images)
+    const allItems = Object.values(listsMap).flat();
+    const enrichedItems = await enrichWithDetails(allItems, 'tv');
+    const enrichedMap = new Map(enrichedItems.map(item => [item.id, item]));
+
+    // Rebuild lists with enriched data
+    const finalData: any = {};
+    Object.keys(listsMap).forEach(key => {
+      finalData[key] = listsMap[key].map(item => enrichedMap.get(item.id) || item);
+    });
+
+    res.json(finalData);
+  } catch (error: any) {
+    logger.error('TV Browse Error:', error.message);
+    res.status(500).json({ error: 'Failed to fetch TV data' });
+  }
+});
+
+// Endpoint for Movies browse page (with logos)
+app.get('/api/browse/movies', validateApiKey, async (req: Request, res: Response) => {
+  try {
+    logger.log('🎬 Fetching Movies browse data...');
+    
+    const requests = {
+      trending: '/trending/movie/week?language=en-US',
+      topRated: '/movie/top_rated?language=en-US',
+      action: '/discover/movie?with_genres=28',
+      comedy: '/discover/movie?with_genres=35',
+      horror: '/discover/movie?with_genres=27',
+      romance: '/discover/movie?with_genres=10749',
+      documentaries: '/discover/movie?with_genres=99',
+    };
+
+    const listPromises = Object.entries(requests).map(async ([key, url]) => {
+      try {
+        const response = await retryAxiosRequest(() =>
+          axios.get(`${TMDB_BASE_URL}${url}`, {
+            headers: { Authorization: `Bearer ${TMDB_API_KEY}` },
+            httpsAgent: tmdbAgent,
+            timeout: 15000
+          })
+        );
+        return { key, results: response.data.results || [] };
+      } catch (e: any) {
+        logger.error(`Failed to fetch Movie list ${key}:`, e.message);
+        return { key, results: [] };
+      }
+    });
+
+    const listsResults = await Promise.all(listPromises);
+    const listsMap: Record<string, any[]> = {};
+    listsResults.forEach(({ key, results }) => { listsMap[key] = results; });
+
+    // Enrich all items with details (images)
+    const allItems = Object.values(listsMap).flat();
+    const enrichedItems = await enrichWithDetails(allItems, 'movie');
+    const enrichedMap = new Map(enrichedItems.map(item => [item.id, item]));
+
+    // Rebuild lists with enriched data
+    const finalData: any = {};
+    Object.keys(listsMap).forEach(key => {
+      finalData[key] = listsMap[key].map(item => enrichedMap.get(item.id) || item);
+    });
+
+    res.json(finalData);
+  } catch (error: any) {
+    logger.error('Movies Browse Error:', error.message);
+    res.status(500).json({ error: 'Failed to fetch Movies data' });
+  }
+});
+
+// Endpoint for New & Popular page
+app.get('/api/browse/popular', validateApiKey, async (req: Request, res: Response) => {
+  try {
+    logger.log('🔥 Fetching Popular browse data...');
+    
+    const [popMovies, popTV, trendMovies, trendTV] = await Promise.all([
+      retryAxiosRequest(() => axios.get(`${TMDB_BASE_URL}/movie/popular`, {
+        headers: { Authorization: `Bearer ${TMDB_API_KEY}` },
+        httpsAgent: tmdbAgent, timeout: 15000
+      })),
+      retryAxiosRequest(() => axios.get(`${TMDB_BASE_URL}/tv/popular`, {
+        headers: { Authorization: `Bearer ${TMDB_API_KEY}` },
+        httpsAgent: tmdbAgent, timeout: 15000
+      })),
+      retryAxiosRequest(() => axios.get(`${TMDB_BASE_URL}/trending/movie/week`, {
+        headers: { Authorization: `Bearer ${TMDB_API_KEY}` },
+        httpsAgent: tmdbAgent, timeout: 15000
+      })),
+      retryAxiosRequest(() => axios.get(`${TMDB_BASE_URL}/trending/tv/week`, {
+        headers: { Authorization: `Bearer ${TMDB_API_KEY}` },
+        httpsAgent: tmdbAgent, timeout: 15000
+      })),
+    ]);
+
+    // Enrich movies and TV separately
+    const enrichedPopMovies = await enrichWithDetails(popMovies.data.results || [], 'movie');
+    const enrichedPopTV = await enrichWithDetails(popTV.data.results || [], 'tv');
+    const enrichedTrendMovies = await enrichWithDetails(trendMovies.data.results || [], 'movie');
+    const enrichedTrendTV = await enrichWithDetails(trendTV.data.results || [], 'tv');
+
+    res.json({
+      trending: enrichedPopMovies,
+      topRated: enrichedPopTV,
+      action: enrichedTrendMovies,
+      comedy: enrichedTrendTV,
+      horror: [],
+      romance: [],
+      documentaries: []
+    });
+  } catch (error: any) {
+    logger.error('Popular Browse Error:', error.message);
+    res.status(500).json({ error: 'Failed to fetch Popular data' });
+  }
+});
+
 
 // Endpoint to fetch trailer for a specific movie/TV show
 app.get('/api/trailer/:type/:id', validateApiKey, async (req: Request, res: Response) => {

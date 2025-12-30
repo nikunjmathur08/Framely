@@ -1,8 +1,8 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState } from 'react';
 import Navbar from '../components/Navbar';
 import Banner from '../components/Banner';
 import Row from '../components/Row';
-import axios, { requests } from '../services/tmdb';
+import axios from 'axios';
 import { Movie } from '../types';
 import { useSeo } from '../hooks/useSeo';
 import { logger } from "../utils/logger";
@@ -61,71 +61,30 @@ const Browse: React.FC<BrowseProps> = ({ category }) => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        let reqs: any = {};
+        // Use aggregated backend endpoints that return enriched data with logos
+        const backendUrl = import.meta.env.VITE_BACKEND_URL || 
+                           (import.meta.env.PROD ? '' : 'http://localhost:3001');
         
+        let endpoint = '';
         if (category === 'tv') {
-           const [trending, topRated, actionAdv, comedy, crime, drama, kids, sciFi] = await Promise.all([
-             axios.get(requests.fetchTrendingTV),
-             axios.get(requests.fetchTopRatedTV),
-             axios.get(requests.fetchActionAdventureTV),
-             axios.get(requests.fetchComedyTV),
-             axios.get(requests.fetchCrimeTV),
-             axios.get(requests.fetchDramaTV),
-             axios.get(requests.fetchKidsTV),
-             axios.get(requests.fetchSciFiFantasyTV)
-           ]);
-           
-           reqs = {
-             trending: trending.data.results,
-             topRated: topRated.data.results,
-             action: actionAdv.data.results,
-             comedy: comedy.data.results,
-             horror: crime.data.results, // Mapping Crime to this slot
-             romance: drama.data.results, // Mapping Drama to this slot
-             documentaries: sciFi.data.results // Mapping Sci-Fi to this slot
-           };
+          endpoint = '/api/browse/tv';
         } else if (category === 'movie') {
-           const [trending, topRated, action, comedy, horror, romance, docs] = await Promise.all([
-             axios.get(requests.fetchTrendingMovies),
-             axios.get(requests.fetchTopRated), // Reusing generic top rated for movies
-             axios.get(requests.fetchActionMovies),
-             axios.get(requests.fetchComedyMovies),
-             axios.get(requests.fetchHorrorMovies),
-             axios.get(requests.fetchRomanceMovies),
-             axios.get(requests.fetchDocumentaries)
-           ]);
-           
-           reqs = {
-             trending: trending.data.results,
-             topRated: topRated.data.results,
-             action: action.data.results,
-             comedy: comedy.data.results,
-             horror: horror.data.results,
-             romance: romance.data.results,
-             documentaries: docs.data.results
-           };
-
+          endpoint = '/api/browse/movies';
         } else if (category === 'popular') {
-            // Mix of popular movies and TV
-            const [popMovies, popTV, trendMovies, trendTV] = await Promise.all([
-                axios.get(requests.fetchPopularMovies),
-                axios.get(requests.fetchPopularTV),
-                axios.get(requests.fetchTrendingMovies),
-                axios.get(requests.fetchTrendingTV)
-            ]);
-
-            reqs = {
-                trending: popMovies.data.results, // Featured Banner
-                topRated: popTV.data.results,     // Popular TV
-                action: trendMovies.data.results, // Trending Movies
-                comedy: trendTV.data.results,     // Trending TV
-                horror: [],
-                romance: [],
-                documentaries: []
-            };
+          endpoint = '/api/browse/popular';
         }
-
-        setData(reqs);
+        
+        const response = await axios.get(`${backendUrl}${endpoint}`);
+        
+        setData({
+          trending: response.data.trending || [],
+          topRated: response.data.topRated || [],
+          action: response.data.action || [],
+          comedy: response.data.comedy || [],
+          horror: response.data.horror || [],
+          romance: response.data.romance || [],
+          documentaries: response.data.documentaries || []
+        });
       } catch (error) {
         logger.error("Error fetching browse data:", error);
       } finally {

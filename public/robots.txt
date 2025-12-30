@@ -4,13 +4,11 @@
 User-agent: *
 Allow: /
 
-# Sitemap location
 Sitemap: https://framely-nm.vercel.app/sitemap.xml
 
 # Disallow admin/private areas (none currently)
 # Disallow: /admin/
 
-# Allow search engines to crawl all public content
 Allow: /movies
 Allow: /tv-shows
 Allow: /new-popular
