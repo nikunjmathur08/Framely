@@ -2,51 +2,63 @@ import express, { Request, Response } from 'express';
 import cors from 'cors';
 import axios from 'axios';
 import https from 'https';
-import * as dns from 'dns';
 import dotenv from 'dotenv';
 import { logger } from '../utils/logger';
-import Resolver from 'dns-over-http-resolver';
 import helmet from 'helmet';
 import { rateLimit } from 'express-rate-limit';
 
 // Load .env for local development (not used in Vercel)
 dotenv.config({ path: 'server/.env' });
 
-// ✨ DNS-over-HTTPS Resolver to bypass ISP DNS blocking
-// Uses Cloudflare's 1.1.1.1 DoH service programmatically
-const dohResolver = new Resolver();
-
-// Custom DNS lookup function that uses Cloudflare DoH
-async function customDnsLookup(hostname: string, options: any, callback: any) {
-  try {
-    logger.log(`🔍 DNS-over-HTTPS lookup for: ${hostname}`);
-    const addresses = await dohResolver.resolve4(hostname);
-    
-    if (addresses && addresses.length > 0) {
-      const ip = addresses[0];
-      logger.log(`✅ Resolved ${hostname} -> ${ip} via Cloudflare DoH`);
-      callback(null, ip, 4);
-    } else {
-      logger.warn(`⚠️ No addresses found for ${hostname}, falling back to system DNS`);
-      dns.lookup(hostname, options, callback);
-    }
-  } catch (error: any) {
-    logger.error(`❌ DoH lookup failed for ${hostname}:`, error.message);
-    // Fallback to system DNS if DoH fails
-    dns.lookup(hostname, options, callback);
-  }
-}
-
-// Optimized HTTPS Agent for TMDB connectivity with DNS-over-HTTPS
+// Optimized HTTPS Agent for TMDB connectivity
 const tmdbAgent = new https.Agent({
   keepAlive: true,
-  family: 4, 
-  timeout: 10000,
-  lookup: customDnsLookup as any, // Use our custom DoH lookup
+  keepAliveMsecs: 3000,
+  maxSockets: 50,
+  maxFreeSockets: 10,
+  family: 4,
+  timeout: 30000,
 });
 
 // Import mock data with explicit .js extension for ES module compatibility
 import { MOCK_MOVIES } from './mockData.js';
+
+// Helper function to retry axios requests with exponential backoff
+async function retryAxiosRequest<T>(
+  requestFn: () => Promise<T>,
+  maxRetries: number = 3,
+  baseDelay: number = 1000
+): Promise<T> {
+  let lastError;
+  
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await requestFn();
+    } catch (error: any) {
+      lastError = error;
+      
+      // Only retry on network errors (timeouts, connection issues)
+      const isNetworkError = 
+        error.code === 'ECONNABORTED' || 
+        error.code === 'ETIMEDOUT' ||
+        error.code === 'ENOTFOUND' ||
+        error.message?.includes('timeout') ||
+        !error.response;
+      
+      // Don't retry on final attempt or non-network errors
+      if (attempt === maxRetries || !isNetworkError) {
+        throw lastError;
+      }
+      
+      // Exponential backoff: 1s, 2s, 4s
+      const delay = baseDelay * Math.pow(2, attempt);
+      logger.log(`⏳ Retry attempt ${attempt + 1}/${maxRetries} after ${delay}ms...`);
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+  }
+  
+  throw lastError;
+}
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -62,9 +74,10 @@ app.use(cors());
 app.use(express.json());
 
 // Rate Limiting
+const isDev = process.env.NODE_ENV !== 'production';
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 1000, // Limit each IP to 1000 requests per windowMs
+  windowMs: isDev ? 1 * 60 * 1000 : 15 * 60 * 1000, // 1 minute in dev, 15 minutes in prod
+  max: isDev ? 5000 : 1000, // 5000 requests per minute in dev
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Too many requests, please try again later.' }
@@ -116,10 +129,13 @@ app.get('/api/movies/homepage', validateApiKey, async (req: Request, res: Respon
 
     const listPromises = Object.entries(requests).map(async ([key, url]) => {
         try {
-            const response = await axios.get(`${TMDB_BASE_URL}${url}`, {
-                 headers: { Authorization: `Bearer ${TMDB_API_KEY}` },
-                 httpsAgent: tmdbAgent, timeout: 8000
-            });
+            const response = await retryAxiosRequest(() => 
+              axios.get(`${TMDB_BASE_URL}${url}`, {
+                headers: { Authorization: `Bearer ${TMDB_API_KEY}` },
+                httpsAgent: tmdbAgent,
+                timeout: 20000 // Increased to 20s
+              })
+            );
             return { key, results: response.data.results || [] };
         } catch (e: any) {
             logger.error(`Failed to fetch list ${key}:`, e.message);
@@ -148,10 +164,13 @@ app.get('/api/movies/homepage', validateApiKey, async (req: Request, res: Respon
     const detailPromises = Array.from(uniqueItemsMap.values()).map(async ({ id, type }) => {
         try {
             const endpoint = type === 'tv' ? `/tv/${id}` : `/movie/${id}`;
-            const response = await axios.get(`${TMDB_BASE_URL}${endpoint}?append_to_response=images,videos,credits,recommendations`, {
+            const response = await retryAxiosRequest(() =>
+              axios.get(`${TMDB_BASE_URL}${endpoint}?append_to_response=images,videos,credits,recommendations`, {
                 headers: { Authorization: `Bearer ${TMDB_API_KEY}` },
-                httpsAgent: tmdbAgent, timeout: 8000
-            });
+                httpsAgent: tmdbAgent,
+                timeout: 20000 // Increased to 20s
+              })
+            );
             return response.data;
         } catch (e: any) {
             // If detail fetch fails, return partial data (null) or ignore
@@ -224,12 +243,14 @@ app.get('/api/trailer/:type/:id', validateApiKey, async (req: Request, res: Resp
 
     logger.log(`🎬 Fetching trailer for ${type}/${id}...`);
     
-    const response = await axios.get(`${TMDB_BASE_URL}/${type}/${id}/videos`, {
-      params: { language: 'en-US' },
-      headers: { Authorization: `Bearer ${TMDB_API_KEY}` },
-      httpsAgent: tmdbAgent,
-      timeout: 8000
-    });
+    const response = await retryAxiosRequest(() =>
+      axios.get(`${TMDB_BASE_URL}/${type}/${id}/videos`, {
+        params: { language: 'en-US' },
+        headers: { Authorization: `Bearer ${TMDB_API_KEY}` },
+        httpsAgent: tmdbAgent,
+        timeout: 20000 // Increased to 20s
+      })
+    );
 
     res.json(response.data);
   } catch (error: any) {
@@ -256,16 +277,18 @@ app.use('/api/tmdb', validateApiKey, async (req: Request, res: Response) => {
     // req.path will have the path after /api/tmdb
     const tmdbPath = req.path.substring(1); // Remove leading slash
     
-    // Make request to TMDB API with optimized Agent
-    const response = await axios.get(`${TMDB_BASE_URL}/${tmdbPath}`, {
-      params: req.query,  // Forward query params WITHOUT api_key
-      headers: {
-        Authorization: `Bearer ${TMDB_API_KEY}`,
-        'Content-Type': 'application/json;charset=utf-8'
-      },
-      httpsAgent: tmdbAgent, // Use our optimized network agent
-      timeout: 10000         // Request-level timeout (10s)
-    });
+    // Make request to TMDB API with optimized Agent and retry logic
+    const response = await retryAxiosRequest(() =>
+      axios.get(`${TMDB_BASE_URL}/${tmdbPath}`, {
+        params: req.query,  // Forward query params WITHOUT api_key
+        headers: {
+          Authorization: `Bearer ${TMDB_API_KEY}`,
+          'Content-Type': 'application/json;charset=utf-8'
+        },
+        httpsAgent: tmdbAgent, // Use our optimized network agent
+        timeout: 20000         // Request-level timeout (20s)
+      })
+    );
     
     // Return the TMDB response
     res.json(response.data);

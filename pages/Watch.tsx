@@ -6,6 +6,7 @@ import axios, { requests, getImageUrl, TMDB_GENRES } from '../services/tmdb';
 import { TvShowDetails, Movie, Season, Episode } from '../types';
 import ProtectedIframe from '../components/ProtectedIframe';
 import AdBlockerModal from '../components/AdBlockerModal';
+import ContentErrorPage from '../components/ContentErrorPage';
 import { useAppStore } from '../store/useAppStore';
 import { shouldShowAdBlockerModal } from '../utils/adBlockerDetection';
 import { useSeo } from '../hooks/useSeo';
@@ -75,6 +76,8 @@ const Watch: React.FC = () => {
   const [movieDetails, setMovieDetails] = useState<Movie | null>(null);
   const [seasonDetails, setSeasonDetails] = useState<Season | null>(null);
   const [showAdBlockerModal, setShowAdBlockerModal] = useState(false);
+  const [contentError, setContentError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const { 
     updateWatchHistory, 
     getWatchHistory, 
@@ -193,6 +196,8 @@ const Watch: React.FC = () => {
   useEffect(() => {
     if (!id) return;
     async function fetchDetails() {
+      setIsLoading(true);
+      setContentError(null);
       try {
         if (mediaType === 'tv') {
           const res = await axios.get(requests.getTvDetails(id!));
@@ -201,8 +206,15 @@ const Watch: React.FC = () => {
           const res = await axios.get(requests.getMovieDetails(id!));
           setMovieDetails(res.data);
         }
-      } catch (err) {
+        setIsLoading(false);
+      } catch (err: any) {
         logger.error(`Failed to fetch ${mediaType} details:`, err);
+        setContentError(
+          err.response?.status === 404 
+            ? 'This content could not be found' 
+            : "We're having trouble loading this content"
+        );
+        setIsLoading(false);
       }
     }
     fetchDetails();
@@ -245,6 +257,19 @@ const Watch: React.FC = () => {
     if (!airDate) return false;
     return new Date(airDate) <= new Date();
   };
+
+  const handleRetry = () => {
+    setContentError(null);
+    setIsLoading(true);
+    // Re-trigger the fetch by updating a key dependency would be ideal,
+    // but we can just reload the page for simplicity
+    window.location.reload();
+  };
+
+  // Show error page if content failed to load
+  if (contentError) {
+    return <ContentErrorPage onRetry={handleRetry} errorMessage={contentError} />;
+  }
 
   return (
     <div className="min-h-screen w-full bg-[#0a0a0a] text-white flex flex-col overflow-x-hidden">

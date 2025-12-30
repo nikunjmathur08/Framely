@@ -103,11 +103,23 @@ export const useAppStore = create<AppState>()(
       movieDataError: null,
       lastFetched: null,
 
-      // Trailer Cache
+      // Trailer Cache - NOT persisted to avoid quota issues
       trailerCache: {} as Record<number, string | null>,
       getTrailer: (id: number) => get().trailerCache[id],
-      setTrailer: (id: number, url: string | null) =>
-        set({ trailerCache: { ...get().trailerCache, [id]: url } }),
+      setTrailer: (id: number, url: string | null) => {
+        // Limit cache size to 100 entries to prevent memory bloat
+        const cache = get().trailerCache;
+        const keys = Object.keys(cache);
+        if (keys.length > 100) {
+          // Remove oldest 20 entries
+          const toRemove = keys.slice(0, 20);
+          const newCache = { ...cache };
+          toRemove.forEach(k => delete newCache[Number(k)]);
+          set({ trailerCache: { ...newCache, [id]: url } });
+        } else {
+          set({ trailerCache: { ...cache, [id]: url } });
+        }
+      },
 
       // Trailer Playback State
       playingTrailer: null,
@@ -239,6 +251,7 @@ export const useAppStore = create<AppState>()(
     }),
     {
       name: "framley-storage",
+      // Only persist essential user data, NOT large cached data
       partialize: (state) => ({
         myList: state.myList,
         watchHistory: state.watchHistory,

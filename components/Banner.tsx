@@ -4,14 +4,14 @@ import { BannerProps } from "../types";
 import { Info, Play, PlayCircle, Volume2, VolumeX } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAppStore } from "../store/useAppStore";
-import { useTrailer } from "../hooks/useTrailer";
+import { useTrailerEager } from "../hooks/useTrailer";
 import { logger } from "../utils/logger";
 import YouTube from "react-youtube";
 
 const Banner: React.FC<BannerProps> = ({ movie, loading }) => {
   const navigate = useNavigate();
   const { openMoreInfo, setPlayingTrailer, setBannerTrailerState } = useAppStore();
-  const { trailer } = useTrailer(movie || { id: 0 });
+  const { trailer } = useTrailerEager(movie || { id: 0 });
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
   const [player, setPlayer] = useState<any>(null);
