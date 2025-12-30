@@ -3,13 +3,14 @@ import Navbar from "../components/Navbar";
 import Banner from "../components/Banner";
 import Row from "../components/Row";
 import ContinueWatchingRow from "../components/ContinueWatchingRow";
+import ContentErrorPage from "../components/ContentErrorPage";
 import { useMovieData } from "../hooks/useMovieData";
 import { useContinueWatching } from "../hooks/useContinueWatching";
 import { useAppStore } from "../store/useAppStore";
 import { useSeo } from "../hooks/useSeo";
 
 const Home: React.FC = () => {
-  const { data, loading } = useMovieData();
+  const { data, loading, error } = useMovieData();
 
   // SEO for Home page
   useSeo({
@@ -19,20 +20,25 @@ const Home: React.FC = () => {
   });
 
   // Trigger fetch on mount - will use cache if fresh, or refresh if stale
+  const fetchData = useCallback(() => {
+    useAppStore.getState().fetchMovieData(true); // Force refresh
+  }, []);
+
   useEffect(() => {
     useAppStore.getState().fetchMovieData();
   }, []);
 
+  // Get My List and Continue Watching
+  const myList = useAppStore((state) => state.myList);
+  const removeFromWatchHistory = useAppStore((state) => state.removeFromWatchHistory);
+  
   // Select a random movie for the banner from trending
   const bannerMovie = useMemo(() => {
     return data.trending.length > 0
       ? data.trending[Math.floor(Math.random() * data.trending.length)]
       : null;
-  }, [data.trending.length]);
+  }, [data.trending]);
 
-  // Get My List and Continue Watching
-  const { myList, removeFromWatchHistory } = useAppStore();
-  
   // Combine all movies for continue watching lookup
   const allMovies = useMemo(() => [
     ...data.trending,
@@ -46,9 +52,23 @@ const Home: React.FC = () => {
   
   const continueWatchingItems = useContinueWatching(allMovies);
 
-  const handleRemoveFromContinueWatching = (id: string) => {
+  const handleRemoveFromContinueWatching = useCallback((id: string) => {
     removeFromWatchHistory(id);
-  };
+  }, [removeFromWatchHistory]);
+
+  // Check if we have any data - computed AFTER all hooks
+  const hasNoData = !loading && 
+    data.trending.length === 0 && 
+    data.topRated.length === 0 && 
+    data.action.length === 0;
+
+  if (error || hasNoData) {
+    return (
+      <ContentErrorPage 
+        errorMessage="Sorry we're having trouble with your request."
+      />
+    );
+  }
 
   return (
     <div className="relative min-h-screen bg-[#141414]">

@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import Navbar from '../components/Navbar';
 import Banner from '../components/Banner';
 import Row from '../components/Row';
+import ContentErrorPage from '../components/ContentErrorPage';
 import axios from 'axios';
 import { Movie } from '../types';
 import { useSeo } from '../hooks/useSeo';
@@ -30,24 +31,27 @@ const SEO_BY_CATEGORY = {
 interface CategoryData {
   trending: Movie[];
   topRated: Movie[];
-  action: Movie[]; // or "Action & Adventure" for TV
+  action: Movie[];
   comedy: Movie[];
-  horror: Movie[]; // or Crime for TV
-  romance: Movie[]; // or Drama for TV
-  documentaries: Movie[]; // or Kids/Sci-Fi for TV
+  horror: Movie[];
+  romance: Movie[];
+  documentaries: Movie[];
 }
 
+const emptyData: CategoryData = {
+  trending: [],
+  topRated: [],
+  action: [],
+  comedy: [],
+  horror: [],
+  romance: [],
+  documentaries: []
+};
+
 const Browse: React.FC<BrowseProps> = ({ category }) => {
-  const [data, setData] = useState<CategoryData>({
-    trending: [],
-    topRated: [],
-    action: [],
-    comedy: [],
-    horror: [],
-    romance: [],
-    documentaries: []
-  });
+  const [data, setData] = useState<CategoryData>(emptyData);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
   // SEO for Browse page based on category
   const seoConfig = SEO_BY_CATEGORY[category];
@@ -57,43 +61,81 @@ const Browse: React.FC<BrowseProps> = ({ category }) => {
     type: 'website',
   });
 
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        // Use aggregated backend endpoints that return enriched data with logos
-        const backendUrl = import.meta.env.VITE_BACKEND_URL || 
-                           (import.meta.env.PROD ? '' : 'http://localhost:3001');
-        
-        let endpoint = '';
-        if (category === 'tv') {
-          endpoint = '/api/browse/tv';
-        } else if (category === 'movie') {
-          endpoint = '/api/browse/movies';
-        } else if (category === 'popular') {
-          endpoint = '/api/browse/popular';
-        }
-        
-        const response = await axios.get(`${backendUrl}${endpoint}`);
-        
-        setData({
-          trending: response.data.trending || [],
-          topRated: response.data.topRated || [],
-          action: response.data.action || [],
-          comedy: response.data.comedy || [],
-          horror: response.data.horror || [],
-          romance: response.data.romance || [],
-          documentaries: response.data.documentaries || []
-        });
-      } catch (error) {
-        logger.error("Error fetching browse data:", error);
-      } finally {
-        setLoading(false);
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    setError(false);
+    
+    try {
+      // Use aggregated backend endpoints that return enriched data with logos
+      const backendUrl = import.meta.env.VITE_BACKEND_URL || 
+                         (import.meta.env.PROD ? '' : 'http://localhost:3001');
+      
+      // Map category to API parameter
+      const categoryParam = category === 'movie' ? 'movies' : category;
+      
+      // Use query param for Vercel (file-based routing)
+      const endpoint = import.meta.env.PROD 
+        ? `/api/browse?category=${categoryParam}`
+        : `/api/browse/${categoryParam}`;
+      
+      const response = await axios.get(`${backendUrl}${endpoint}`, {
+        timeout: 30000 // 30 second timeout
+      });
+      
+      const responseData = response.data || {};
+      
+      // Check if response has any content
+      const hasContent = 
+        (responseData.trending?.length > 0) ||
+        (responseData.topRated?.length > 0) ||
+        (responseData.action?.length > 0);
+      
+      if (!hasContent) {
+        logger.error("Browse data response is empty");
+        setError(true);
+        setData(emptyData);
+        return;
       }
-    };
-
-    fetchData();
+      
+      setData({
+        trending: responseData.trending || [],
+        topRated: responseData.topRated || [],
+        action: responseData.action || [],
+        comedy: responseData.comedy || [],
+        horror: responseData.horror || [],
+        romance: responseData.romance || [],
+        documentaries: responseData.documentaries || []
+      });
+    } catch (err: any) {
+      logger.error("Error fetching browse data:", err.message);
+      setError(true);
+      setData(emptyData);
+    } finally {
+      setLoading(false);
+    }
   }, [category]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  const handleRetry = useCallback(() => {
+    fetchData();
+  }, [fetchData]);
+
+  // Show error page if there's an error or if not loading and data is empty
+  const hasNoData = !loading && 
+    data.trending.length === 0 && 
+    data.topRated.length === 0 && 
+    data.action.length === 0;
+
+  if (error || hasNoData) {
+    return (
+      <ContentErrorPage 
+        errorMessage="Sorry we're having trouble with your request."
+      />
+    );
+  }
 
   // Select a random movie for the banner
   const bannerMovie =

@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import MoreInfoModal from './components/MoreInfoModal';
 import Home from './pages/Home';
 import Browse from './pages/Browse';
+import TestError from './pages/TestError';
 
 const Watch = lazy(() => import('./pages/Watch'));
 const Search = lazy(() => import('./pages/Search'));
@@ -55,6 +56,9 @@ const App: React.FC = () => {
             {/* Utility routes */}
             <Route path="/search" element={<PageWrapper><Search /></PageWrapper>} />
             <Route path="/my-list" element={<PageWrapper><MyList /></PageWrapper>} />
+            
+            {/* Test route for error page preview - remove in production if needed */}
+            <Route path="/test-error" element={<PageWrapper><TestError /></PageWrapper>} />
           </Routes>
         </AnimatePresence>
       </Suspense>
