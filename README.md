@@ -79,7 +79,3 @@ npm run dev:all
 ## 🔒 Security
 
 This application uses a **backend proxy server** to securely handle TMDB API requests. The API key is never exposed to the client-side code.
-
----
-
-Built with ❤️ by Nikunj Mathur
