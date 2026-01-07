@@ -268,7 +268,7 @@ const Watch: React.FC = () => {
 
   // Show error page if content failed to load
   if (contentError) {
-    return <ContentErrorPage onRetry={handleRetry} errorMessage={contentError} />;
+    return <ContentErrorPage errorMessage={contentError} />;
   }
 
   return (

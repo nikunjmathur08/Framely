@@ -1,6 +1,7 @@
 import React, { Suspense, lazy } from 'react';
 import { Routes, Route, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import ErrorBoundary from './components/ErrorBoundary';
 import MoreInfoModal from './components/MoreInfoModal';
 import Home from './pages/Home';
 import Browse from './pages/Browse';
@@ -34,36 +35,38 @@ const App: React.FC = () => {
   const location = useLocation();
 
   return (
-    <div className="app bg-[#141414] min-h-screen text-white overflow-x-hidden">
-      <Suspense fallback={<PageLoader />}>
-        <AnimatePresence mode="wait">
-          <Routes location={location} key={location.pathname}>
-            {/* Main navigation routes */}
-            <Route path="/" element={<PageWrapper><Home /></PageWrapper>} />
-            <Route path="/tv-shows" element={<PageWrapper><Browse category="tv" /></PageWrapper>} />
-            <Route path="/movies" element={<PageWrapper><Browse category="movie" /></PageWrapper>} />
-            <Route path="/new-popular" element={<PageWrapper><Browse category="popular" /></PageWrapper>} />
-            
-            {/* SEO-friendly detail pages with slug support */}
-            <Route path="/movie/:id" element={<PageWrapper><MovieDetails /></PageWrapper>} />
-            <Route path="/movie/:id/:slug" element={<PageWrapper><MovieDetails /></PageWrapper>} />
-            <Route path="/tv/:id" element={<PageWrapper><TvDetails /></PageWrapper>} />
-            <Route path="/tv/:id/:slug" element={<PageWrapper><TvDetails /></PageWrapper>} />
-            
-            {/* Watch routes */}
-            <Route path="/watch/:type/:id" element={<PageWrapper><Watch /></PageWrapper>} />
-            
-            {/* Utility routes */}
-            <Route path="/search" element={<PageWrapper><Search /></PageWrapper>} />
-            <Route path="/my-list" element={<PageWrapper><MyList /></PageWrapper>} />
-            
-            {/* Test route for error page preview - remove in production if needed */}
-            <Route path="/test-error" element={<PageWrapper><TestError /></PageWrapper>} />
-          </Routes>
-        </AnimatePresence>
-      </Suspense>
-      <MoreInfoModal />
-    </div>
+    <ErrorBoundary>
+      <div className="app bg-[#141414] min-h-screen text-white overflow-x-hidden">
+        <Suspense fallback={<PageLoader />}>
+          <AnimatePresence mode="wait">
+            <Routes location={location} key={location.pathname}>
+              {/* Main navigation routes */}
+              <Route path="/" element={<PageWrapper><Home /></PageWrapper>} />
+              <Route path="/tv-shows" element={<PageWrapper><Browse category="tv" /></PageWrapper>} />
+              <Route path="/movies" element={<PageWrapper><Browse category="movie" /></PageWrapper>} />
+              <Route path="/new-popular" element={<PageWrapper><Browse category="popular" /></PageWrapper>} />
+              
+              {/* SEO-friendly detail pages with slug support */}
+              <Route path="/movie/:id" element={<PageWrapper><MovieDetails /></PageWrapper>} />
+              <Route path="/movie/:id/:slug" element={<PageWrapper><MovieDetails /></PageWrapper>} />
+              <Route path="/tv/:id" element={<PageWrapper><TvDetails /></PageWrapper>} />
+              <Route path="/tv/:id/:slug" element={<PageWrapper><TvDetails /></PageWrapper>} />
+              
+              {/* Watch routes */}
+              <Route path="/watch/:type/:id" element={<PageWrapper><Watch /></PageWrapper>} />
+              
+              {/* Utility routes */}
+              <Route path="/search" element={<PageWrapper><Search /></PageWrapper>} />
+              <Route path="/my-list" element={<PageWrapper><MyList /></PageWrapper>} />
+              
+              {/* Test route for error page preview - remove in production if needed */}
+              <Route path="/test-error" element={<PageWrapper><TestError /></PageWrapper>} />
+            </Routes>
+          </AnimatePresence>
+        </Suspense>
+        <MoreInfoModal />
+      </div>
+    </ErrorBoundary>
   );
 };
 

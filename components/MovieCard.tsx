@@ -204,6 +204,9 @@ const MovieCard: React.FC<Props> = memo(({
 
   return (
     <div
+      role="button"
+      tabIndex={0}
+      aria-label={`View details for ${displayTitle}`}
       className={`relative cursor-pointer pointer-events-auto ${
         isGrid ? "w-full h-full aspect-video" : `flex-none px-0.5 ${
           isLargeRow ? "w-[140px] sm:w-[180px] h-[210px] sm:h-[270px]"
@@ -214,6 +217,12 @@ const MovieCard: React.FC<Props> = memo(({
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       onClick={handleCardClick}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          handleCardClick();
+        }
+      }}
     >
       <motion.div
         className={`relative bg-[#181818] rounded-md shadow-2xl ${originClass}`}
