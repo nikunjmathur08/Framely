@@ -6,6 +6,7 @@ import MoreInfoModal from './components/MoreInfoModal';
 import Home from './pages/Home';
 import Browse from './pages/Browse';
 import TestError from './pages/TestError';
+import { Analytics } from "@vercel/analytics/react";
 
 const Watch = lazy(() => import('./pages/Watch'));
 const Search = lazy(() => import('./pages/Search'));
@@ -37,6 +38,7 @@ const App: React.FC = () => {
   return (
     <ErrorBoundary>
       <div className="app bg-[#141414] min-h-screen text-white overflow-x-hidden">
+        <Analytics />
         <Suspense fallback={<PageLoader />}>
           <AnimatePresence mode="wait">
             <Routes location={location} key={location.pathname}>
