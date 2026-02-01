@@ -28,7 +28,6 @@ async function enrichWithDetails(items: any[], type: 'tv' | 'movie', limit: numb
   const detailPromises = uniqueIds.map(async (id) => {
     try {
       const endpoint = type === 'tv' ? `/tv/${id}` : `/movie/${id}`;
-      // OPTIMIZATION: Only fetch 'images' - videos/credits/recommendations are fetched on-demand
       const response = await axios.get(`${TMDB_BASE_URL}${endpoint}?append_to_response=images`, {
         headers: { Authorization: `Bearer ${TMDB_READ_ACCESS_TOKEN}` },
         httpsAgent: tmdbAgent,
