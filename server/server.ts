@@ -64,6 +64,7 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 const TMDB_API_KEY = process.env.TMDB_API_KEY || process.env.VITE_TMDB_API_KEY;
 const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
+const ITEMS_TO_ENRICH = 6;
 
 // Middleware
 app.use(helmet({
@@ -105,7 +106,7 @@ app.get('/api/health', (req: Request, res: Response) => {
   });
 });
 
-// Endpoint to fetch ALL homepage data in one go (Fix 2: Clean Architecture)
+// Endpoint to fetch ALL homepage data in one go
 app.get('/api/movies/homepage', validateApiKey, async (req: Request, res: Response) => {
   try {
     logger.log('🚀 Fetching aggregated homepage data...');
@@ -147,33 +148,31 @@ app.get('/api/movies/homepage', validateApiKey, async (req: Request, res: Respon
     const listsMap: Record<string, any[]> = {};
     listsResults.forEach(({ key, results }) => { listsMap[key] = results; });
 
-    // 2. Collect unique IDs for detail fetching
-    const allItems = Object.values(listsMap).flat();
-    const uniqueItemsMap = new Map(); // id -> {id, type}
+    const itemsToEnrich = new Map<number, { id: number; type: 'tv' | 'movie' }>();
     
-    allItems.forEach(item => {
-        if (!uniqueItemsMap.has(item.id)) {
-            // Determine type if not explicit
-            const type = item.media_type || (item.first_air_date ? 'tv' : 'movie');
-            uniqueItemsMap.set(item.id, { id: item.id, type });
+    Object.values(listsMap).forEach(list => {
+      list.slice(0, ITEMS_TO_ENRICH).forEach(item => {
+        if (!itemsToEnrich.has(item.id)) {
+          const type = item.media_type || (item.first_air_date ? 'tv' : 'movie');
+          itemsToEnrich.set(item.id, { id: item.id, type });
         }
+      });
     });
 
-    // 3. Fetch details for every items in parallel
-    // We limit concurrency to avoid hitting rate limits too hard if valid
-    const detailPromises = Array.from(uniqueItemsMap.values()).map(async ({ id, type }) => {
+    logger.log(`📊 Enriching ${itemsToEnrich.size} items (first ${ITEMS_TO_ENRICH} per category)`);
+
+    const detailPromises = Array.from(itemsToEnrich.values()).map(async ({ id, type }) => {
         try {
             const endpoint = type === 'tv' ? `/tv/${id}` : `/movie/${id}`;
             const response = await retryAxiosRequest(() =>
-              axios.get(`${TMDB_BASE_URL}${endpoint}?append_to_response=images,videos,credits,recommendations`, {
+              axios.get(`${TMDB_BASE_URL}${endpoint}?append_to_response=images`, {
                 headers: { Authorization: `Bearer ${TMDB_API_KEY}` },
                 httpsAgent: tmdbAgent,
-                timeout: 20000 // Increased to 20s
+                timeout: 15000
               })
             );
             return response.data;
         } catch (e: any) {
-            // If detail fetch fails, return partial data (null) or ignore
             return null;
         }
     });
@@ -231,9 +230,11 @@ app.get('/api/movies/homepage', validateApiKey, async (req: Request, res: Respon
   }
 });
 
-// Helper function to enrich items with full details (images, etc.)
-async function enrichWithDetails(items: any[], type: 'tv' | 'movie'): Promise<any[]> {
-  const uniqueIds = [...new Set(items.map(item => item.id))];
+// Helper function to enrich items with full details (images only - optimized)
+async function enrichWithDetails(items: any[], type: 'tv' | 'movie', limit: number = ITEMS_TO_ENRICH): Promise<any[]> {
+  // OPTIMIZATION: Only enrich first N items (visible on initial viewport)
+  const itemsToEnrich = items.slice(0, limit);
+  const uniqueIds = [...new Set(itemsToEnrich.map(item => item.id))];
   
   const detailPromises = uniqueIds.map(async (id) => {
     try {

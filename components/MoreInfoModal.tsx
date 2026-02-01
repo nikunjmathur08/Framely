@@ -18,6 +18,7 @@ import { useNavigate } from "react-router-dom";
 import { useTrailer } from "../hooks/useTrailer";
 import { useTvSeasonData } from "../hooks/useTvSeasonData";
 import YouTube, { YouTubeProps } from "react-youtube";
+import axios from "axios";
 
 const MoreInfoModal: React.FC = () => {
   const { selectedMovie, closeMoreInfo, addToList, removeFromList, isInList, bannerTrailerState, setBannerTrailerState } = useAppStore();
@@ -27,6 +28,8 @@ const MoreInfoModal: React.FC = () => {
   const [player, setPlayer] = useState<any>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [startTime, setStartTime] = useState<number>(0); // Track where to start playback
+  const [recommendations, setRecommendations] = useState<any[]>([]);
+  const [recommendationsLoading, setRecommendationsLoading] = useState(false);
 
   // Memoize opts to prevent re-renders restarting the video
   // MUST be before any conditional returns
@@ -91,6 +94,41 @@ const MoreInfoModal: React.FC = () => {
       setIsPlaying(true);
     }
   }, [trailer, bannerTrailerState, setBannerTrailerState]);
+
+  useEffect(() => {
+    if (!selectedMovie) {
+      setRecommendations([]);
+      return;
+    }
+    
+    // If recommendations are already available in the movie data, use them
+    const existingRecs = selectedMovie.recommendations?.results;
+    if (existingRecs && existingRecs.length > 0) {
+      setRecommendations(existingRecs);
+      return;
+    }
+    
+    // Otherwise, fetch recommendations on-demand
+    const fetchRecommendations = async () => {
+      setRecommendationsLoading(true);
+      try {
+        const backendUrl = import.meta.env.VITE_BACKEND_URL || 
+                           (import.meta.env.PROD ? '' : 'http://localhost:3001');
+        const type = selectedMovie.media_type || (selectedMovie.name ? 'tv' : 'movie');
+        const response = await axios.get(
+          `${backendUrl}/api/tmdb/${type}/${selectedMovie.id}/recommendations`
+        );
+        setRecommendations(response.data.results?.slice(0, 12) || []);
+      } catch (error) {
+        console.error('Failed to fetch recommendations:', error);
+        setRecommendations([]);
+      } finally {
+        setRecommendationsLoading(false);
+      }
+    };
+    
+    fetchRecommendations();
+  }, [selectedMovie]);
 
   if (!selectedMovie) return null;
 
@@ -483,14 +521,27 @@ const MoreInfoModal: React.FC = () => {
                 </div>
               )}
             {/* More Like This Section */}
-            {selectedMovie.recommendations?.results &&
-              selectedMovie.recommendations.results.length > 0 && (
+            {(recommendations.length > 0 || recommendationsLoading) && (
                 <div className="pt-6 border-t border-gray-800">
                   <h3 className="text-xl font-semibold text-white mb-4">
                     More Like This
                   </h3>
+                  {recommendationsLoading ? (
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                      {[...Array(6)].map((_, i) => (
+                        <div key={i} className="bg-[#2f2f2f] rounded-lg overflow-hidden animate-pulse">
+                          <div className="w-full aspect-video bg-gray-700" />
+                          <div className="p-3 space-y-2">
+                            <div className="h-3 bg-gray-700 rounded w-1/3" />
+                            <div className="h-4 bg-gray-700 rounded w-2/3" />
+                            <div className="h-3 bg-gray-700 rounded w-full" />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    {selectedMovie.recommendations.results
+                    {recommendations
                       .slice(0, 6)
                       .map((rec: any) => (
                         <div
@@ -532,6 +583,7 @@ const MoreInfoModal: React.FC = () => {
                         </div>
                       ))}
                   </div>
+                  )}
                 </div>
               )}
           </div>

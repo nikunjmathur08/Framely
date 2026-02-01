@@ -17,11 +17,17 @@ const tmdbAgent = new https.Agent({
 const TMDB_READ_ACCESS_TOKEN = process.env.TMDB_READ_ACCESS_TOKEN || process.env.TMDB_API_KEY || process.env.VITE_TMDB_API_KEY;
 const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
 
+// Number of items per category to fetch full details for (visible on initial render)
+const ITEMS_TO_ENRICH = 6;
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  
+  // HTTP Caching - cache at edge for 5 mins, serve stale for 10 mins while revalidating
+  res.setHeader('Cache-Control', 's-maxage=300, stale-while-revalidate=600');
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
@@ -35,12 +41,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    log('🚀 Fetching aggregated homepage data...');
-    log('Read Access Token source:', 
-      process.env.TMDB_READ_ACCESS_TOKEN ? 'TMDB_READ_ACCESS_TOKEN' : 
-      process.env.TMDB_API_KEY ? 'TMDB_API_KEY (fallback)' : 'VITE_TMDB_API_KEY (fallback)');
-    log('Token exists:', !!TMDB_READ_ACCESS_TOKEN);
-    log('Token prefix:', TMDB_READ_ACCESS_TOKEN ? TMDB_READ_ACCESS_TOKEN.substring(0, 10) : 'N/A');
+    log('🚀 Fetching aggregated homepage data (optimized)...');
 
     const requests = {
       trending: '/trending/all/week?language=en-US',
@@ -67,7 +68,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return { key, results: response.data.results || [] };
       } catch (e: any) {
         logError(`❌ Failed to fetch list ${key}:`, e.message);
-        logError(`   Status: ${e.response?.status}, Data:`, e.response?.data);
         return { key, results: [] };
       }
     });
@@ -76,20 +76,26 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const listsMap: Record<string, any[]> = {};
     listsResults.forEach(({ key, results }) => { listsMap[key] = results; });
 
-    const allItems = Object.values(listsMap).flat();
-    const uniqueItemsMap = new Map();
-
-    allItems.forEach(item => {
-      if (!uniqueItemsMap.has(item.id)) {
-        const type = item.media_type || (item.first_air_date ? 'tv' : 'movie');
-        uniqueItemsMap.set(item.id, { id: item.id, type });
-      }
+    // OPTIMIZATION: Only fetch details for first N items per category (visible on initial render)
+    // This reduces API calls from ~100+ to ~60, significantly speeding up response time
+    const itemsToEnrich = new Map<number, { id: number; type: 'tv' | 'movie' }>();
+    
+    Object.values(listsMap).forEach(list => {
+      list.slice(0, ITEMS_TO_ENRICH).forEach(item => {
+        if (!itemsToEnrich.has(item.id)) {
+          const type = item.media_type || (item.first_air_date ? 'tv' : 'movie');
+          itemsToEnrich.set(item.id, { id: item.id, type });
+        }
+      });
     });
 
-    const detailPromises = Array.from(uniqueItemsMap.values()).map(async ({ id, type }) => {
+    log(`📊 Enriching ${itemsToEnrich.size} items (first ${ITEMS_TO_ENRICH} per category)`);
+
+    // OPTIMIZATION: Only fetch 'images' - videos/credits/recommendations are not needed for initial render
+    const detailPromises = Array.from(itemsToEnrich.values()).map(async ({ id, type }) => {
       try {
         const endpoint = type === 'tv' ? `/tv/${id}` : `/movie/${id}`;
-        const response = await axios.get(`${TMDB_BASE_URL}${endpoint}?append_to_response=images,videos,credits,recommendations`, {
+        const response = await axios.get(`${TMDB_BASE_URL}${endpoint}?append_to_response=images`, {
           headers: { Authorization: `Bearer ${TMDB_READ_ACCESS_TOKEN}` },
           httpsAgent: tmdbAgent,
           timeout: 8000
@@ -133,6 +139,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       ...(finalData.japaneseTV || [])
     ].sort(() => Math.random() - 0.5);
 
+    log('✅ Homepage data ready (optimized)');
     return res.status(200).json(finalData);
   } catch (error: any) {
     logError('Homepage Error:', error.message);

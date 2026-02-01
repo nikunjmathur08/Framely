@@ -16,13 +16,19 @@ const tmdbAgent = new https.Agent({
 const TMDB_READ_ACCESS_TOKEN = process.env.TMDB_READ_ACCESS_TOKEN || process.env.TMDB_API_KEY || process.env.VITE_TMDB_API_KEY;
 const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
 
-// Helper function to enrich items with details (images)
-async function enrichWithDetails(items: any[], type: 'tv' | 'movie'): Promise<any[]> {
-  const uniqueIds = [...new Set(items.map(item => item.id))];
+// Number of items per category to fetch full details for (visible on initial render)
+const ITEMS_TO_ENRICH = 6;
+
+// Helper function to enrich items with details (images only - videos/credits not needed for initial render)
+async function enrichWithDetails(items: any[], type: 'tv' | 'movie', limit: number = ITEMS_TO_ENRICH): Promise<any[]> {
+  // Only enrich first N items (visible on initial viewport)
+  const itemsToEnrich = items.slice(0, limit);
+  const uniqueIds = [...new Set(itemsToEnrich.map(item => item.id))];
   
   const detailPromises = uniqueIds.map(async (id) => {
     try {
       const endpoint = type === 'tv' ? `/tv/${id}` : `/movie/${id}`;
+      // OPTIMIZATION: Only fetch 'images' - videos/credits/recommendations are fetched on-demand
       const response = await axios.get(`${TMDB_BASE_URL}${endpoint}?append_to_response=images`, {
         headers: { Authorization: `Bearer ${TMDB_READ_ACCESS_TOKEN}` },
         httpsAgent: tmdbAgent,
@@ -40,6 +46,7 @@ async function enrichWithDetails(items: any[], type: 'tv' | 'movie'): Promise<an
     if (detail) detailsMap.set(detail.id, detail);
   });
 
+  // Return all items, but only first N are enriched with details
   return items.map(item => detailsMap.get(item.id) || item);
 }
 
@@ -48,6 +55,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  
+  // HTTP Caching - cache at edge for 5 mins, serve stale for 10 mins while revalidating
+  res.setHeader('Cache-Control', 's-maxage=300, stale-while-revalidate=600');
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
