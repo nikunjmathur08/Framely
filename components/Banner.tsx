@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useRef } from "react";
 import { getImageUrl } from "../services/tmdb";
 import { BannerProps } from "../types";
-import { Info, Play, PlayCircle, Volume2, VolumeX } from "lucide-react";
+import { Info, Play, Volume2, VolumeX } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAppStore } from "../store/useAppStore";
 import { useTrailerEager } from "../hooks/useTrailer";
 import { logger } from "../utils/logger";
 import YouTube from "react-youtube";
+import axios from "axios";
 
 const Banner: React.FC<BannerProps> = ({ movie, loading }) => {
   const navigate = useNavigate();
@@ -15,6 +16,49 @@ const Banner: React.FC<BannerProps> = ({ movie, loading }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
   const [player, setPlayer] = useState<any>(null);
+  // Local logo path – may be populated lazily if movie.images is missing
+  const [logoPath, setLogoPath] = useState<string | null>(null);
+
+  // Sync logoPath from movie.images (fast path) or fetch on-demand (fallback)
+  useEffect(() => {
+    if (!movie) return;
+
+    // Fast path: images already enriched by backend
+    const logos = movie.images?.logos;
+    if (logos && logos.length > 0) {
+      const preferred = logos.find((l) => l.iso_639_1 === "en") || logos[0];
+      setLogoPath(preferred.file_path);
+      return;
+    }
+
+    // Fallback: fetch images on-demand via the generic TMDB proxy
+    const fetchLogo = async () => {
+      try {
+        const backendUrl =
+          import.meta.env.VITE_BACKEND_URL ||
+          (import.meta.env.PROD ? "" : "http://localhost:3001");
+        const mediaType =
+          movie.media_type || (movie.first_air_date ? "tv" : "movie");
+        const res = await axios.get(
+          `${backendUrl}/api/tmdb/${mediaType}/${movie.id}?append_to_response=images`
+        );
+        const fetchedLogos = res.data?.images?.logos;
+        if (fetchedLogos && fetchedLogos.length > 0) {
+          const preferred =
+            fetchedLogos.find((l: any) => l.iso_639_1 === "en") ||
+            fetchedLogos[0];
+          setLogoPath(preferred.file_path);
+        } else {
+          setLogoPath(null);
+        }
+      } catch (e) {
+        logger.warn("Banner: failed to fetch logo for movie", movie.id, e);
+        setLogoPath(null);
+      }
+    };
+
+    fetchLogo();
+  }, [movie]);
 
   // Auto-play trailer when it becomes available
   useEffect(() => {
@@ -103,7 +147,7 @@ const Banner: React.FC<BannerProps> = ({ movie, loading }) => {
       }}
     >
       {isPlaying && trailer && (
-        <div className="absolute inset-0 w-full h-full">
+        <div className="absolute inset-0 w-full h-full overflow-hidden">
           <YouTube
             videoId={trailer}
             opts={{
@@ -148,15 +192,9 @@ const Banner: React.FC<BannerProps> = ({ movie, loading }) => {
       )}
 
       <div className="relative flex flex-col justify-end h-full px-4 pb-16 sm:pb-20 md:pb-24 space-y-2 sm:space-y-3 md:space-y-4 md:px-10 lg:w-[60%] xl:w-[50%] z-40">
-        {movie.images?.logos && movie.images.logos.length > 0 ? (
+        {logoPath ? (
           <img
-            src={getImageUrl(
-              (
-                movie.images.logos.find((logo) => logo.iso_639_1 === "en") ||
-                movie.images.logos[0]
-              ).file_path,
-              "original"
-            )}
+            src={getImageUrl(logoPath, "original")}
             alt={movie.title || movie.name || movie.original_name}
             className={`w-full object-contain drop-shadow-2xl transition-all duration-700 ${
               isPlaying

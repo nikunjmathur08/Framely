@@ -10,6 +10,7 @@
 /* Base styles */
 html {
   scroll-behavior: smooth;
+  overflow-x: hidden;
 }
 
 body {
@@ -20,6 +21,7 @@ body {
   -moz-osx-font-smoothing: grayscale;
   background-color: #141414;
   color: white;
+  overflow-x: hidden;
 }
 
 * {

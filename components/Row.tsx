@@ -85,6 +85,7 @@ const Row: React.FC<RowProps> = ({
                   isLargeRow={isLargeRow}
                   index={index}
                   total={safeMovies.length}
+                  rowKey={sectionId}
                 />
               ))}
         </div>

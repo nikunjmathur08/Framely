@@ -76,8 +76,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const listsMap: Record<string, any[]> = {};
     listsResults.forEach(({ key, results }) => { listsMap[key] = results; });
 
-    // OPTIMIZATION: Only fetch details for first N items per category (visible on initial render)
-    // This reduces API calls from ~100+ to ~60, significantly speeding up response time
     const itemsToEnrich = new Map<number, { id: number; type: 'tv' | 'movie' }>();
     
     Object.values(listsMap).forEach(list => {
@@ -91,7 +89,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     log(`📊 Enriching ${itemsToEnrich.size} items (first ${ITEMS_TO_ENRICH} per category)`);
 
-    // OPTIMIZATION: Only fetch 'images' - videos/credits/recommendations are not needed for initial render
     const detailPromises = Array.from(itemsToEnrich.values()).map(async ({ id, type }) => {
       try {
         const endpoint = type === 'tv' ? `/tv/${id}` : `/movie/${id}`;

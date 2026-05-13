@@ -5,7 +5,6 @@ import {
   Plus,
   Check,
   ChevronDown,
-  ThumbsUp,
   Volume2,
   VolumeX,
 } from "lucide-react";
@@ -24,6 +23,7 @@ interface Props {
   index?: number;
   total?: number;
   isGrid?: boolean;
+  rowKey?: string;
 }
 
 // Static animation configs - defined OUTSIDE component to prevent re-creation
@@ -78,6 +78,7 @@ const MovieCard: React.FC<Props> = memo(({
   index = 0,
   total = 0,
   isGrid = false,
+  rowKey = 'default',
 }) => {
   const [isMuted, setIsMuted] = useState(true);
   const [player, setPlayer] = useState<any>(null);
@@ -97,7 +98,9 @@ const MovieCard: React.FC<Props> = memo(({
   
   // Compute derived state locally
   const added = useMemo(() => myList.some((m) => m.id === movie.id), [myList, movie.id]);
-  const isHovered = hoveredMovieId === movie.id;
+  // Unique key per card instance — prevents same-movie cross-row hover bleed
+  const hoverKey = `${rowKey}-${movie.id}`;
+  const isHovered = hoveredMovieId === hoverKey;
   
   // LAZY: Only fetch trailer when card is hovered
   const { trailer } = useTrailer(movie, isHovered);
@@ -173,9 +176,9 @@ const MovieCard: React.FC<Props> = memo(({
 
   const handleMouseEnter = useCallback(() => {
     if (isDesktop) {
-      hoverTimeout.current = setTimeout(() => setHoveredMovie(movie.id), 400);
+      hoverTimeout.current = setTimeout(() => setHoveredMovie(hoverKey), 400);
     }
-  }, [isDesktop, setHoveredMovie, movie.id]);
+  }, [isDesktop, setHoveredMovie, hoverKey]);
 
   const handleMouseLeave = useCallback(() => {
     if (isDesktop) {
@@ -198,7 +201,11 @@ const MovieCard: React.FC<Props> = memo(({
     toggleMute();
   }, [toggleMute]);
 
-  const formatDuration = (runtime: number) => `${Math.floor(runtime / 60)}h ${runtime % 60}`;
+  const formatDuration = (runtime: number) => {
+    const h = Math.floor(runtime / 60);
+    const m = runtime % 60;
+    return h > 0 ? `${h}h ${m}m` : `${m}m`;
+  };
 
   const whileHoverAnimation = isDesktop ? DESKTOP_HOVER : NO_HOVER;
 
@@ -297,9 +304,6 @@ const MovieCard: React.FC<Props> = memo(({
                 </button>
                 <button onClick={handleListToggle} className="border-2 border-gray-500 text-gray-300 hover:border-white hover:text-white transition rounded-full w-6 h-6 sm:w-8 sm:h-8 flex items-center justify-center bg-[#2a2a2a]/60" title="Add to My List">
                   {added ? <Check className="w-3 h-3 sm:w-4 sm:h-4" /> : <Plus className="w-3 h-3 sm:w-4 sm:h-4" />}
-                </button>
-                <button className="border-2 border-gray-500 text-gray-300 hover:border-white hover:text-white transition rounded-full w-6 h-6 sm:w-8 sm:h-8 flex items-center justify-center bg-[#2a2a2a]/60" title="Like">
-                  <ThumbsUp className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
                 </button>
                 <button onClick={handleMoreInfoClick} className="border-2 border-gray-500 text-gray-300 hover:border-white hover:text-white transition rounded-full w-6 h-6 sm:w-8 sm:h-8 ml-auto flex items-center justify-center bg-[#2a2a2a]/60" title="More Info">
                   <ChevronDown className="w-3 h-3 sm:w-4 sm:h-4" />

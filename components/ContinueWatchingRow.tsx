@@ -133,8 +133,9 @@ const ContinueWatchingCard: React.FC<ContinueWatchingCardProps> = ({ item, onRem
           e.stopPropagation();
           onRemove(id);
         }}
-        className="absolute top-2 right-2 w-7 h-7 bg-black/60 hover:bg-black/80 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10"
+        className="absolute top-2 right-2 w-8 h-8 bg-black/70 hover:bg-black/90 rounded-full flex items-center justify-center transition-all z-10 opacity-100 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100 shadow-lg ring-1 ring-white/25"
         aria-label="Remove from Continue Watching"
+        title="Remove from Continue Watching"
       >
         <X className="w-4 h-4 text-white" />
       </button>

@@ -44,8 +44,8 @@ interface AppState {
   clearPlayingTrailer: () => void;
 
   // Global Hover State - ensures only one card is hovered at a time
-  hoveredMovieId: number | null;
-  setHoveredMovie: (movieId: number | null) => void;
+  hoveredMovieId: string | null;
+  setHoveredMovie: (movieId: string | null) => void;
   clearHoveredMovie: () => void;
 
   // Banner Trailer State - for seamless handoff to MoreInfoModal
@@ -128,8 +128,8 @@ export const useAppStore = create<AppState>()(
       clearPlayingTrailer: () => set({ playingTrailer: null }),
 
       // Global Hover State
-      hoveredMovieId: null,
-      setHoveredMovie: (movieId: number | null) =>
+      hoveredMovieId: null as string | null,
+      setHoveredMovie: (movieId: string | null) =>
         set({ hoveredMovieId: movieId }),
       clearHoveredMovie: () => set({ hoveredMovieId: null }),
 

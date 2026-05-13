@@ -4,6 +4,7 @@ import Banner from "../components/Banner";
 import Row from "../components/Row";
 import ContinueWatchingRow from "../components/ContinueWatchingRow";
 import ContentErrorPage from "../components/ContentErrorPage";
+import WhatsNewModal from "../components/WhatsNewModal";
 import { useMovieData } from "../hooks/useMovieData";
 import { useContinueWatching } from "../hooks/useContinueWatching";
 import { useAppStore } from "../store/useAppStore";
@@ -32,10 +33,13 @@ const Home: React.FC = () => {
   const myList = useAppStore((state) => state.myList);
   const removeFromWatchHistory = useAppStore((state) => state.removeFromWatchHistory);
   
-  // Select a random movie for the banner from trending
+  // Select a random movie for the banner from the first 6 trending items.
+  // Only the first ITEMS_TO_ENRICH (6) items per category are enriched with
+  // images.logos by the backend — so we must not pick beyond that slice.
   const bannerMovie = useMemo(() => {
-    return data.trending.length > 0
-      ? data.trending[Math.floor(Math.random() * data.trending.length)]
+    const enrichedSlice = data.trending.slice(0, 6);
+    return enrichedSlice.length > 0
+      ? enrichedSlice[Math.floor(Math.random() * enrichedSlice.length)]
       : null;
   }, [data.trending]);
 
@@ -72,6 +76,7 @@ const Home: React.FC = () => {
 
   return (
     <div className="relative min-h-screen bg-[#141414]">
+      <WhatsNewModal />
       <Navbar />
       <main className="relative mb-24 pb-8 lg:space-y-6">
         <Banner movie={bannerMovie} loading={loading} />

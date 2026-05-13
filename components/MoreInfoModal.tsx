@@ -5,7 +5,6 @@ import {
   Play,
   Plus,
   Check,
-  ThumbsUp,
   PlayCircle,
   Volume2,
   VolumeX,
@@ -30,6 +29,8 @@ const MoreInfoModal: React.FC = () => {
   const [startTime, setStartTime] = useState<number>(0); // Track where to start playback
   const [recommendations, setRecommendations] = useState<any[]>([]);
   const [recommendationsLoading, setRecommendationsLoading] = useState(false);
+  const [cast, setCast] = useState<any[]>([]);
+  const [castLoading, setCastLoading] = useState(false);
 
   // Memoize opts to prevent re-renders restarting the video
   // MUST be before any conditional returns
@@ -130,6 +131,43 @@ const MoreInfoModal: React.FC = () => {
     fetchRecommendations();
   }, [selectedMovie]);
 
+  // Fetch cast on-demand if not already present in selectedMovie.credits
+  useEffect(() => {
+    if (!selectedMovie) {
+      setCast([]);
+      return;
+    }
+
+    // Fast path: credits already enriched (e.g. from detail page)
+    const existingCast = selectedMovie.credits?.cast;
+    if (existingCast && existingCast.length > 0) {
+      setCast(existingCast);
+      return;
+    }
+
+    // Fetch credits on-demand
+    const fetchCast = async () => {
+      setCastLoading(true);
+      try {
+        const backendUrl = import.meta.env.VITE_BACKEND_URL ||
+                           (import.meta.env.PROD ? '' : 'http://localhost:3001');
+        const type = selectedMovie.media_type || (selectedMovie.name ? 'tv' : 'movie');
+        const endpoint = type === 'tv'
+          ? `${backendUrl}/api/tmdb/tv/${selectedMovie.id}/credits`
+          : `${backendUrl}/api/tmdb/movie/${selectedMovie.id}/credits`;
+        const response = await axios.get(endpoint);
+        setCast(response.data.cast?.slice(0, 12) || []);
+      } catch (error) {
+        console.error('Failed to fetch cast:', error);
+        setCast([]);
+      } finally {
+        setCastLoading(false);
+      }
+    };
+
+    fetchCast();
+  }, [selectedMovie]);
+
   if (!selectedMovie) return null;
 
   const added = isInList(selectedMovie.id);
@@ -152,7 +190,7 @@ const MoreInfoModal: React.FC = () => {
   const formatDuration = (runtime: number) => {
     const h = Math.floor(runtime / 60);
     const m = runtime % 60;
-    return `${h}h ${m}m`;
+    return h > 0 ? `${h}h ${m}m` : `${m}m`;
   };
 
   const getGenreNames = () => {
@@ -273,10 +311,20 @@ const MoreInfoModal: React.FC = () => {
                 <img
                   src={getImageUrl(logoPath, "w500")}
                   alt={displayTitle}
-                  className="w-1/2 sm:w-2/3 md:w-full max-w-[180px] sm:max-w-xs md:max-w-md max-h-20 sm:max-h-28 object-contain mb-4 md:mb-6 drop-shadow-2xl"
+                  className={`object-contain mb-4 md:mb-6 drop-shadow-2xl transition-all duration-700 ${
+                    isPlaying
+                      ? "max-w-[140px] sm:max-w-[180px] md:max-w-[220px]"
+                      : "w-1/2 sm:w-2/3 md:w-full max-w-[200px] sm:max-w-xs md:max-w-md max-h-24 sm:max-h-28"
+                  }`}
                 />
               ) : (
-                <h1 className="text-4xl md:text-5xl font-bold text-white mb-6 drop-shadow-2xl">
+                <h1
+                  className={`font-bold text-white mb-6 drop-shadow-2xl transition-all duration-700 ${
+                    isPlaying
+                      ? "text-xl sm:text-2xl md:text-3xl"
+                      : "text-4xl md:text-5xl"
+                  }`}
+                >
                   {displayTitle}
                 </h1>
               )}
@@ -301,13 +349,6 @@ const MoreInfoModal: React.FC = () => {
                   ) : (
                     <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
                   )}
-                </button>
-
-                <button
-                  className="border-2 border-gray-400 text-white hover:border-white transition rounded-full w-8 h-8 sm:w-9 sm:h-9 md:w-11 md:h-11 flex items-center justify-center bg-[#2a2a2a]/60"
-                  title="Like"
-                >
-                  <ThumbsUp className="w-3 h-3 sm:w-4 sm:h-4" />
                 </button>
               </div>
             </div>
@@ -350,20 +391,6 @@ const MoreInfoModal: React.FC = () => {
 
               {/* Right Column - Additional Info */}
               <div className="space-y-3 text-sm">
-                {/* Cast */}
-                {selectedMovie.credits?.cast &&
-                  selectedMovie.credits.cast.length > 0 && (
-                    <div>
-                      <span className="text-gray-500">Cast: </span>
-                      <span className="text-gray-300">
-                        {selectedMovie.credits.cast
-                          .slice(0, 4)
-                          .map((c: any) => c.name)
-                          .join(", ")}
-                      </span>
-                    </div>
-                  )}
-
                 {/* Genres */}
                 {getGenreNames().length > 0 && (
                   <div>
@@ -374,15 +401,75 @@ const MoreInfoModal: React.FC = () => {
                   </div>
                 )}
 
-                {/* Rating */}
+                {/* Maturity */}
                 <div>
-                  <span className="text-gray-500">This show is: </span>
+                  <span className="text-gray-500">This {mediaType === 'tv' ? 'show' : 'movie'} is: </span>
                   <span className="text-gray-300">
                     {getGenreNames()[0] || "Exciting"}
                   </span>
                 </div>
               </div>
             </div>
+
+            {/* Cast Section */}
+            {(cast.length > 0 || castLoading) && (
+              <div className="pt-6 border-t border-gray-800">
+                <h3 className="text-xl font-semibold text-white mb-4">Cast</h3>
+                {castLoading ? (
+                  <div className="flex gap-4 overflow-x-auto scrollbar-hide pb-2">
+                    {[...Array(6)].map((_, i) => (
+                      <div key={i} className="flex-shrink-0 flex flex-col items-center gap-2 w-20 animate-pulse">
+                        <div className="w-16 h-16 rounded-full bg-gray-700" />
+                        <div className="h-3 w-14 bg-gray-700 rounded" />
+                        <div className="h-2.5 w-12 bg-gray-800 rounded" />
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex gap-4 overflow-x-auto scrollbar-hide pt-2">
+                    {cast.slice(0, 12).map((member: any) => {
+                      const initials = member.name
+                        ? member.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()
+                        : '?';
+                      return (
+                        <div
+                          key={member.id}
+                          className="flex-shrink-0 flex flex-col items-center gap-2 w-20 group cursor-default"
+                          title={`${member.name}${member.character ? ` as ${member.character}` : ''}`}
+                        >
+                          {/* Profile photo */}
+                          <div className="relative w-16 h-16 rounded-full overflow-hidden ring-2 ring-white/10 group-hover:ring-white/40 transition-all duration-300">
+                            {member.profile_path ? (
+                              <img
+                                src={`https://image.tmdb.org/t/p/w185${member.profile_path}`}
+                                alt={member.name}
+                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                                loading="lazy"
+                              />
+                            ) : (
+                              <div className="w-full h-full bg-gradient-to-br from-gray-700 to-gray-800 flex items-center justify-center">
+                                <span className="text-gray-300 text-sm font-bold">{initials}</span>
+                              </div>
+                            )}
+                          </div>
+                          {/* Actor name */}
+                          <p className="text-white text-xs font-medium text-center leading-tight truncate w-full">
+                            {member.name}
+                          </p>
+                          {/* Character name */}
+                          {member.character && (
+                            <p className="text-gray-500 text-[10px] text-center leading-tight truncate w-full -mt-1">
+                              {member.character}
+                            </p>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Episodes Section - Only for TV Series */}
             {mediaType === "tv" &&
               selectedMovie.seasons &&
