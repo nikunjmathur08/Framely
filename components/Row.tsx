@@ -35,10 +35,10 @@ const Row: React.FC<RowProps> = ({
 
   return (
     <motion.section 
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 16 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-100px" }}
-      transition={{ duration: 0.8, ease: "easeOut" }}
+      transition={{ type: 'spring', bounce: 0, duration: 0.5 }}
       className="h-fit px-2 sm:px-4 md:px-10 mb-6 sm:mb-8 group relative group-hover:z-50 pointer-events-none first:-mt-20 md:first:-mt-24"
       aria-labelledby={sectionId}
     >
@@ -51,7 +51,7 @@ const Row: React.FC<RowProps> = ({
 
       <div className="relative -ml-2 md:-ml-4">
         <ChevronLeft
-          className={`absolute top-0 bottom-0 left-1 sm:left-2 z-40 m-auto h-7 w-7 sm:h-8 sm:w-8 md:h-9 md:w-9 cursor-pointer opacity-0 transition hover:scale-125 group-hover:opacity-100 pointer-events-auto ${
+          className={`absolute top-0 bottom-0 left-1 sm:left-2 z-40 m-auto h-7 w-7 sm:h-8 sm:w-8 md:h-9 md:w-9 cursor-pointer opacity-0 transition-[opacity,transform] hover:scale-125 active:scale-90 group-hover:opacity-100 pointer-events-auto ${
             !isMoved && "hidden"
           }`}
           onClick={() => handleClick("left")}
@@ -91,7 +91,7 @@ const Row: React.FC<RowProps> = ({
         </div>
 
         <ChevronRight
-          className="absolute top-0 bottom-0 right-1 sm:right-2 z-40 m-auto h-7 w-7 sm:h-8 sm:w-8 md:h-9 md:w-9 cursor-pointer opacity-0 transition hover:scale-125 group-hover:opacity-100 pointer-events-auto"
+          className="absolute top-0 bottom-0 right-1 sm:right-2 z-40 m-auto h-7 w-7 sm:h-8 sm:w-8 md:h-9 md:w-9 cursor-pointer opacity-0 transition-[opacity,transform] hover:scale-125 active:scale-90 group-hover:opacity-100 pointer-events-auto"
           onClick={() => handleClick("right")}
         />
       </div>

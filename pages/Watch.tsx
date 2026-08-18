@@ -21,15 +21,18 @@ interface PlayerConfig {
 
 const PLAYER_CONFIGS: PlayerConfig[] = [
   {
-    id: 'vidking',
-    name: 'Vidking',
+    id: 'cinesrc',
+    name: 'CineSRC',
     getSrc: (type, id, season, episode, progress) => {
-      const baseUrl = 'https://www.vidking.net/embed';
-      const params = new URLSearchParams({ color: 'e50914', autoPlay: 'true' });
-      if (type === 'tv') { params.append('nextEpisode', 'true'); params.append('episodeSelector', 'true'); }
-      if (progress && progress > 10) params.append('progress', Math.floor(progress).toString());
-      const path = type === 'movie' ? `movie/${id}` : `tv/${id}/${season}/${episode}`;
-      return `${baseUrl}/${path}?${params.toString()}`;
+      const params = new URLSearchParams({ color: '%23e50914', autonext: 'true', autoskip: 'true' });
+      if (progress && progress > 10) params.append('t', Math.floor(progress).toString());
+      if (type === 'movie') {
+        return `https://cinesrc.st/embed/movie/${id}?${params.toString()}`;
+      } else {
+        params.append('s', String(season));
+        params.append('e', String(episode));
+        return `https://cinesrc.st/embed/tv/${id}?${params.toString()}`;
+      }
     }
   },
   {
@@ -164,8 +167,13 @@ const Watch: React.FC = () => {
             let currentTime: number | undefined;
             let duration: number | undefined;
 
+            // CineSRC style
+            if (data.type === 'cinesrc:timeupdate') {
+              currentTime = data.currentTime;
+              duration = data.duration;
+            }
             // Vidking & MappleUK style
-            if (data.type === 'PLAYER_EVENT' && data.data) {
+            else if (data.type === 'PLAYER_EVENT' && data.data) {
               currentTime = data.data.currentTime;
               duration = data.data.duration;
             } 

@@ -50,15 +50,16 @@ const YOUTUBE_OPTS = {
   },
 } as const;
 
-// Static hover animation - defined once
+// Static hover animation — spring is interruptible by definition (Apple §3).
+// bounce: 0 = critically damped (no overshoot on a hover, only on flick).
 const DESKTOP_HOVER = {
   scale: 1.4,
   y: -50,
   transition: {
     delay: 0.4,
-    duration: 0.3,
-    type: "tween" as const,
-    ease: "easeInOut" as const,
+    type: 'spring' as const,
+    bounce: 0,
+    duration: 0.35,
   },
 };
 const NO_HOVER = {};
@@ -214,7 +215,7 @@ const MovieCard: React.FC<Props> = memo(({
       role="button"
       tabIndex={0}
       aria-label={`View details for ${displayTitle}`}
-      className={`relative cursor-pointer pointer-events-auto ${
+      className={`relative cursor-pointer pointer-events-auto active:scale-[0.97] transition-transform duration-100 ${
         isGrid ? "w-full h-full aspect-video" : `flex-none px-0.5 ${
           isLargeRow ? "w-[140px] sm:w-[180px] h-[210px] sm:h-[270px]"
                      : "w-[140px] sm:w-[180px] md:w-[260px] h-[90px] sm:h-[115px] md:h-[160px]"
@@ -298,14 +299,15 @@ const MovieCard: React.FC<Props> = memo(({
               transition={QUICK_FADE}
               className="p-3 bg-[#181818] rounded-b-md absolute top-full left-0 w-full shadow-[0px_10px_20px_rgba(0,0,0,0.7)] z-50 flex flex-col gap-3"
             >
+              {/* Action buttons + metadata panel */}
               <div className="flex items-center gap-1 sm:gap-2">
-                <button onClick={handlePlay} className="bg-white hover:bg-neutral-200 transition text-black rounded-full p-1 sm:p-1.5 shadow-md flex items-center justify-center w-6 h-6 sm:w-8 sm:h-8">
+                <button onClick={handlePlay} className="bg-white hover:bg-neutral-200 active:scale-90 transition-[transform,background-color] text-black rounded-full p-1 sm:p-1.5 shadow-md flex items-center justify-center w-6 h-6 sm:w-8 sm:h-8">
                   <Play className="w-3 h-3 sm:w-4 sm:h-4 fill-black translate-x-0.5" />
                 </button>
-                <button onClick={handleListToggle} className="border-2 border-gray-500 text-gray-300 hover:border-white hover:text-white transition rounded-full w-6 h-6 sm:w-8 sm:h-8 flex items-center justify-center bg-[#2a2a2a]/60" title="Add to My List">
+                <button onClick={handleListToggle} className="border-2 border-gray-500 text-gray-300 hover:border-white hover:text-white active:scale-90 transition-[transform,border-color,color] rounded-full w-6 h-6 sm:w-8 sm:h-8 flex items-center justify-center bg-[#2a2a2a]/60" title="Add to My List">
                   {added ? <Check className="w-3 h-3 sm:w-4 sm:h-4" /> : <Plus className="w-3 h-3 sm:w-4 sm:h-4" />}
                 </button>
-                <button onClick={handleMoreInfoClick} className="border-2 border-gray-500 text-gray-300 hover:border-white hover:text-white transition rounded-full w-6 h-6 sm:w-8 sm:h-8 ml-auto flex items-center justify-center bg-[#2a2a2a]/60" title="More Info">
+                <button onClick={handleMoreInfoClick} className="border-2 border-gray-500 text-gray-300 hover:border-white hover:text-white active:scale-90 transition-[transform,border-color,color] rounded-full w-6 h-6 sm:w-8 sm:h-8 ml-auto flex items-center justify-center bg-[#2a2a2a]/60" title="More Info">
                   <ChevronDown className="w-3 h-3 sm:w-4 sm:h-4" />
                 </button>
               </div>

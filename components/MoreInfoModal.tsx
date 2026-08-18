@@ -245,10 +245,10 @@ const MoreInfoModal: React.FC = () => {
         onClick={closeMoreInfo}
       >
         <motion.div
-          initial={{ scale: 0.9, opacity: 0 }}
+          initial={{ scale: 0.95, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          exit={{ scale: 0.9, opacity: 0 }}
-          transition={{ duration: 0.15, ease: "easeOut" }}
+          exit={{ scale: 0.95, opacity: 0 }}
+          transition={{ type: 'spring', bounce: 0.12, duration: 0.4 }}
           className="relative w-full max-w-4xl mt-8 mb-8 bg-[#181818] rounded-lg shadow-2xl overflow-hidden"
           onClick={(e) => e.stopPropagation()}
         >
@@ -333,7 +333,7 @@ const MoreInfoModal: React.FC = () => {
               <div className="flex items-center gap-3 mb-4">
                 <button
                   onClick={handlePlay}
-                  className="bg-white hover:bg-white/90 text-black font-bold px-4 py-1.5 sm:px-6 sm:py-2 md:px-8 md:py-3 rounded flex items-center gap-2 transition text-xs sm:text-sm md:text-base"
+                  className="bg-white hover:bg-white/90 active:scale-[0.97] text-black font-bold px-4 py-1.5 sm:px-6 sm:py-2 md:px-8 md:py-3 rounded flex items-center gap-2 transition-[transform,background-color] text-xs sm:text-sm md:text-base"
                 >
                   <Play className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 fill-black" />
                   <span>Play</span>
@@ -341,7 +341,7 @@ const MoreInfoModal: React.FC = () => {
 
                 <button
                   onClick={handleListToggle}
-                  className="border-2 border-gray-400 text-white hover:border-white transition rounded-full w-8 h-8 sm:w-9 sm:h-9 md:w-11 md:h-11 flex items-center justify-center bg-[#2a2a2a]/60"
+                  className="border-2 border-gray-400 text-white hover:border-white active:scale-90 transition-[transform,border-color] rounded-full w-8 h-8 sm:w-9 sm:h-9 md:w-11 md:h-11 flex items-center justify-center bg-[#2a2a2a]/60"
                   title={added ? "Remove from My List" : "Add to My List"}
                 >
                   {added ? (
@@ -540,7 +540,7 @@ const MoreInfoModal: React.FC = () => {
                         return (
                           <div
                             key={episode.id}
-                            className="group border-b border-gray-600 rounded-md overflow-hidden transition cursor-pointer"
+                            className="group border-b border-gray-600 rounded-md overflow-hidden cursor-pointer hover:bg-white/5 transition-colors"
                             onClick={() => {
                               navigate(
                                 `/watch/tv/${selectedMovie.id}?season=${selectedSeason}&episode=${episode.episode_number}`

@@ -223,14 +223,14 @@ const Banner: React.FC<BannerProps> = ({ movie, loading }) => {
         <div className="flex space-x-2 sm:space-x-3">
           <button
             onClick={handlePlay}
-            className="flex items-center gap-x-1 sm:gap-x-2 rounded px-3 py-1.5 sm:px-5 sm:py-2 text-xs sm:text-sm font-semibold transition hover:opacity-75 md:px-8 md:py-2.5 bg-white text-black"
+            className="flex items-center gap-x-1 sm:gap-x-2 rounded px-3 py-1.5 sm:px-5 sm:py-2 text-xs sm:text-sm font-semibold transition-[transform,opacity] hover:opacity-75 active:scale-[0.97] md:px-8 md:py-2.5 bg-white text-black"
           >
             <Play className="h-4 w-4 sm:h-5 sm:w-5 fill-black" />
             Play
           </button>
           <button
             onClick={handleMoreInfo}
-            className="flex items-center gap-x-1 sm:gap-x-2 rounded px-3 py-1.5 sm:px-5 sm:py-2 text-xs sm:text-sm font-semibold transition hover:opacity-75 md:px-8 md:py-2.5 bg-[gray]/70 text-white"
+            className="flex items-center gap-x-1 sm:gap-x-2 rounded px-3 py-1.5 sm:px-5 sm:py-2 text-xs sm:text-sm font-semibold transition-[transform,opacity] hover:opacity-75 active:scale-[0.97] md:px-8 md:py-2.5 bg-[gray]/70 text-white"
           >
             <Info className="h-4 w-4 sm:h-5 sm:w-5" />
             More Info

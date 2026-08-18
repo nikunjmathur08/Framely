@@ -30,10 +30,10 @@ const ContinueWatchingRow: React.FC<ContinueWatchingRowProps> = ({ items, onRemo
 
   return (
     <motion.section
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 16 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-100px" }}
-      transition={{ duration: 0.8, ease: "easeOut" }}
+      transition={{ type: 'spring', bounce: 0, duration: 0.5 }}
       className="h-fit px-2 sm:px-4 md:px-10 mb-6 sm:mb-8 relative pointer-events-none first:-mt-20 md:first:-mt-24"
       aria-labelledby="continue-watching-heading"
     >
@@ -98,12 +98,14 @@ const ContinueWatchingCard: React.FC<ContinueWatchingCardProps> = ({ item, onRem
       {/* Card */}
       <Link to={watchUrl} className="block">
         <div className="relative aspect-video rounded-md overflow-hidden bg-gray-800">
-          {/* Backdrop Image */}
-          <img
+          {/* Backdrop Image — spring hover per Apple §4 */}
+          <motion.img
             src={getImageUrl(movie.backdrop_path || movie.poster_path, 'w500')}
             alt={title}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            className="w-full h-full object-cover"
             loading="lazy"
+            whileHover={{ scale: 1.05 }}
+            transition={{ type: 'spring', bounce: 0, duration: 0.35 }}
           />
           
           {/* Gradient overlay */}

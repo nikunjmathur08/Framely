@@ -66,9 +66,9 @@ export const CACHE_CONFIG = {
  */
 export const PLAYER_CONFIGS = [
   {
-    id: 'vidking',
-    name: 'Vidking',
-    baseUrl: 'https://www.vidking.net/embed',
+    id: 'cinesrc',
+    name: 'CineSRC',
+    baseUrl: 'https://cinesrc.st/embed',
   },
   {
     id: 'videasy',
@@ -90,4 +90,4 @@ export const PLAYER_CONFIGS = [
 /**
  * Default Player ID
  */
-export const DEFAULT_PLAYER = 'mappleuk';
+export const DEFAULT_PLAYER = 'cinesrc';

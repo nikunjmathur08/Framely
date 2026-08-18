@@ -9,7 +9,9 @@
 
 /* Base styles */
 html {
-  scroll-behavior: smooth;
+  /* Do NOT set scroll-behavior: smooth here — it disables native momentum
+     scrolling on iOS and overrides the browser's own deceleration physics.
+     Programmatic smooth scrolling is applied per-element where appropriate. */
   overflow-x: hidden;
 }
 
@@ -28,7 +30,45 @@ body {
   box-sizing: border-box;
 }
 
-/* Custom utilities */
+/* ─── Typography — optical sizing per Apple §15 ──────────────────────────────
+   Tracking (letter-spacing) must vary by size:
+   - Large display text: negative tracking (letters read too far apart as they grow)
+   - Body / small text: near-zero or slight positive for legibility
+   ─────────────────────────────────────────────────────────────────────────── */
+.text-display {
+  font-size: clamp(2rem, 5vw, 4rem);
+  line-height: 1.05;
+  letter-spacing: -0.025em;
+  font-optical-sizing: auto;
+}
+
+.text-title {
+  line-height: 1.1;
+  letter-spacing: -0.015em;
+}
+
+/* ─── Reduced motion — Apple §14 ─────────────────────────────────────────────
+   Replace slides/springs/parallax with short opacity cross-fades.
+   Drop elastic/overshoot. Keep opacity/color changes that aid comprehension.
+   ─────────────────────────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    /* Allow opacity transitions for feedback — suppress transform-based motion */
+    transition-duration: 0.15ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  /* Framer Motion spring elements: disable scale/translate, keep opacity */
+  [style*="transform"] {
+    transform: none !important;
+  }
+}
+
+/* ─── Custom utilities ───────────────────────────────────────────────────────*/
 .scrollbar-hide {
   -ms-overflow-style: none;
   scrollbar-width: none;
@@ -37,3 +77,9 @@ body {
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
+
+/* Compositor hint — apply to elements that will animate transform/opacity */
+.will-animate {
+  will-change: transform, opacity;
+}
+

@@ -8,7 +8,9 @@ import helmet from 'helmet';
 import { rateLimit } from 'express-rate-limit';
 
 // Load .env for local development (not used in Vercel)
-dotenv.config({ path: 'server/.env' });
+// override: true ensures server/.env values take precedence over any root .env
+// already loaded by the runtime (e.g. Bun auto-loads root .env on startup).
+dotenv.config({ path: 'server/.env', override: true });
 
 // Optimized HTTPS Agent for TMDB connectivity
 const tmdbAgent = new https.Agent({
@@ -62,7 +64,9 @@ async function retryAxiosRequest<T>(
 
 const app = express();
 const PORT = process.env.PORT || 3001;
-const TMDB_API_KEY = process.env.TMDB_API_KEY || process.env.VITE_TMDB_API_KEY;
+// ONLY use the JWT Bearer token from server/.env — never fall back to VITE_TMDB_API_KEY
+// (which is a v3 API key and cannot be used as a Bearer token).
+const TMDB_API_KEY = process.env.TMDB_API_KEY;
 const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
 const ITEMS_TO_ENRICH = 6;
 
@@ -102,7 +106,9 @@ app.get('/api/health', (req: Request, res: Response) => {
   res.json({ 
     status: 'ok', 
     timestamp: new Date().toISOString(),
-    apiKeyConfigured: !!TMDB_API_KEY 
+    apiKeyConfigured: !!TMDB_API_KEY,
+    // Show first 12 chars of key to verify correct token is loaded (JWT starts with 'eyJ')
+    apiKeyPrefix: TMDB_API_KEY ? TMDB_API_KEY.substring(0, 12) + '...' : null,
   });
 });
 

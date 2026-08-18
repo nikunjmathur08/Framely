@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import { Search, Bell, Menu, X, ChevronRight, Film, Tv } from "lucide-react";
 import { useAppStore } from "../store/useAppStore";
@@ -165,9 +166,9 @@ const Navbar: React.FC = () => {
 
   return (
     <header
-      className={`fixed top-0 z-50 w-full transition-all duration-500 ${
+      className={`fixed top-0 z-50 w-full transition-[background-color,backdrop-filter,border-color] duration-500 ${
         isScrolled
-          ? "bg-[#141414]"
+          ? "bg-[#141414]/80 backdrop-blur-xl saturate-150 border-b border-white/[0.06]"
           : "bg-gradient-to-b from-black/80 to-transparent"
       }`}
     >
@@ -198,12 +199,12 @@ const Navbar: React.FC = () => {
           >
             <div
               className={`relative flex items-center ${
-                showSearch ? "bg-black/80 border border-white/60" : ""
-              } p-1 transition-all duration-300`}
+                showSearch ? "bg-black/80 border border-white/20 rounded-lg" : ""
+              } p-1 transition-[background-color,border-color] duration-300`}
             >
               <form
                 onSubmit={handleSearchSubmit}
-                className={`flex items-center transition-all duration-300 ${
+                className={`flex items-center transition-[width] duration-300 ${
                   showSearch ? "w-40 sm:w-56 md:w-72" : "w-5 sm:w-6"
                 }`}
               >
@@ -355,8 +356,6 @@ const Navbar: React.FC = () => {
             )}
           </div>
 
-          <Bell className="w-5 h-5 sm:w-6 sm:h-6 cursor-pointer hidden sm:block" />
-
           <div className="w-7 h-7 sm:w-8 sm:h-8 rounded bg-blue-600 cursor-pointer overflow-hidden hidden sm:block">
             <img
               src="https://picsum.photos/200"
@@ -380,43 +379,64 @@ const Navbar: React.FC = () => {
         </div>
       </div>
 
-      {/* Mobile Menu */}
-      {isMobileMenuOpen && (
-        <div className="md:hidden bg-[#141414] absolute top-16 left-0 w-full p-4 flex flex-col space-y-4 text-center border-t border-gray-800">
-          <Link
-            to="/"
-            onClick={() => setIsMobileMenuOpen(false)}
-            className="text-white hover:text-gray-300"
+      {/* Mobile Menu — spring animated per Apple §1 (respond instantly, animate naturally) */}
+      <AnimatePresence>
+        {isMobileMenuOpen && (
+          <motion.div
+            key="mobile-menu"
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ type: 'spring', bounce: 0, duration: 0.3 }}
+            className="md:hidden bg-[#141414]/95 backdrop-blur-xl absolute top-full left-0 w-full p-4 flex flex-col space-y-4 text-center border-t border-white/[0.06]"
           >
-            Home
-          </Link>
-          <Link
-            to="/my-list"
-            onClick={() => setIsMobileMenuOpen(false)}
-            className="text-white hover:text-gray-300"
-          >
-            My List
-          </Link>
-          <span className="text-gray-400">TV Shows</span>
-          <span className="text-gray-400">Movies</span>
+            <Link
+              to="/"
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="text-white hover:text-gray-300 transition-colors"
+            >
+              Home
+            </Link>
+            <Link
+              to="/my-list"
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="text-white hover:text-gray-300 transition-colors"
+            >
+              My List
+            </Link>
+            <Link
+              to="/tv-shows"
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="text-white hover:text-gray-300 transition-colors"
+            >
+              TV Shows
+            </Link>
+            <Link
+              to="/movies"
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="text-white hover:text-gray-300 transition-colors"
+            >
+              Movies
+            </Link>
 
-          {/* Mobile search */}
-          <form
-            onSubmit={handleSearchSubmit}
-            className="flex items-center bg-[#2a2a2a] rounded px-3 py-2 gap-2"
-          >
-            <Search className="w-4 h-4 text-gray-400 flex-shrink-0" />
-            <input
-              type="text"
-              className="bg-transparent text-white text-sm outline-none flex-1"
-              placeholder="Search titles, people, genres"
-              value={searchInput}
-              onChange={handleInputChange}
-              autoComplete="off"
-            />
-          </form>
-        </div>
-      )}
+            {/* Mobile search */}
+            <form
+              onSubmit={handleSearchSubmit}
+              className="flex items-center bg-[#2a2a2a] rounded px-3 py-2 gap-2"
+            >
+              <Search className="w-4 h-4 text-gray-400 flex-shrink-0" />
+              <input
+                type="text"
+                className="bg-transparent text-white text-sm outline-none flex-1"
+                placeholder="Search titles, people, genres"
+                value={searchInput}
+                onChange={handleInputChange}
+                autoComplete="off"
+              />
+            </form>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </header>
   );
 };
