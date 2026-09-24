@@ -139,7 +139,7 @@ const Banner: React.FC<BannerProps> = ({ movie, loading }) => {
 
   return (
     <header
-      className="relative h-[56vw] min-h-[400px] max-h-[85vh] overflow-hidden rounded-2xl mx-4 md:mx-14 mt-20 md:mt-24"
+      className="relative h-[56vw] min-h-[400px] max-h-[85vh] overflow-hidden rounded-2xl mx-4 md:mx-14"
       style={{
         backgroundImage: `url(${getImageUrl(movie.backdrop_path, "original")})`,
         backgroundSize: "cover",

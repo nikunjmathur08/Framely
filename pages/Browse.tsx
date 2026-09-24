@@ -146,7 +146,7 @@ const Browse: React.FC<BrowseProps> = ({ category }) => {
   return (
     <div className="relative min-h-screen bg-[#141414] lg:min-h-[140vh]">
       <Navbar />
-      <main className="relative pb-8 lg:space-y-6">
+      <main className="relative pt-20 md:pt-24 pb-8 lg:space-y-6">
         <Banner movie={bannerMovie} loading={loading} />
         
         <section className="space-y-0 relative z-20">

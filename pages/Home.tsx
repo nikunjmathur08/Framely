@@ -87,7 +87,7 @@ const Home: React.FC = () => {
     >
       <WhatsNewModal />
       <Navbar />
-      <main className="relative z-10 mb-24">
+      <main className="relative z-10 pt-20 md:pt-24 mb-24">
         {/* Hero banner — self-contained block, rows sit below it (Netflix layout) */}
         <Banner movie={bannerMovie} loading={loading} />
 
