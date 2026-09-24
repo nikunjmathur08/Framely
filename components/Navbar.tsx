@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Search, Bell, Menu, X, ChevronRight, Film, Tv } from "lucide-react";
 import { useAppStore } from "../store/useAppStore";
 import { getImageUrl } from "../services/tmdb";
@@ -18,6 +18,14 @@ interface Suggestion {
   vote_average?: number;
 }
 
+const NAV_LINKS = [
+  { label: "Home", to: "/"},
+  { label: "Shows", to: "/tv-shows"},
+  { label: "Movies", to: "/movies"},
+  { label: "New & Popular", to: "/new-popular"},
+  { label: "My List", to: "/my-list"},
+]
+
 const Navbar: React.FC = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
@@ -32,7 +40,7 @@ const Navbar: React.FC = () => {
   const searchContainerRef = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const navigate = useNavigate();
-  const openMoreInfo = useAppStore((state) => state.openMoreInfo);
+  const location = useLocation();
 
   // Scroll detection
   useEffect(() => {
@@ -77,7 +85,6 @@ const Navbar: React.FC = () => {
         import.meta.env.VITE_BACKEND_URL ||
         (import.meta.env.PROD ? "" : "http://localhost:3001");
 
-      // Try backend proxy first, fall back to direct TMDB (frontend key)
       let results: Suggestion[] = [];
       try {
         const res = await axios.get(
@@ -87,7 +94,6 @@ const Navbar: React.FC = () => {
           (r: any) => r.media_type === "movie" || r.media_type === "tv"
         );
       } catch {
-        // Fallback: direct TMDB call via frontend key
         const TMDB_API_KEY = import.meta.env.VITE_TMDB_API_KEY;
         if (TMDB_API_KEY) {
           const res = await axios.get(
@@ -138,7 +144,6 @@ const Navbar: React.FC = () => {
     setShowSearch(false);
     setSearchInput("");
     setSuggestions([]);
-    // Navigate to the watch page
     navigate(`/watch/${suggestion.media_type}/${suggestion.id}`);
   };
 
@@ -164,48 +169,62 @@ const Navbar: React.FC = () => {
     return date ? new Date(date).getFullYear() : null;
   };
 
+  const isActive = (to: string) =>
+    to === "/" ? location.pathname === "/" : location.pathname.startsWith(to);
+
   return (
     <header
-      className={`fixed top-0 z-50 w-full transition-[background-color,backdrop-filter,border-color] duration-500 ${
+      className={`fixed top-0 z-50 w-full transition-all duration-500 ${
         isScrolled
-          ? "bg-[#141414]/80 backdrop-blur-xl saturate-150 border-b border-white/[0.06]"
-          : "bg-gradient-to-b from-black/80 to-transparent"
+          ? "bg-[#141414]/25 backdrop-blur-sm"
+          : "bg-transparent"
       }`}
     >
-      <div className="flex items-center justify-between px-4 md:px-12 py-3 sm:py-4">
-        <div className="flex items-center space-x-2 sm:space-x-4 md:space-x-8">
-          <Link to="/">
+      <div className="flex items-center justify-between px-4 md:px-14">
+        <div className="flex items-center space-x-6 md:space-x-8">
+          <Link to="/" className="flex-shrink-0" aria-label="Framely Home">
             <img
-              src="/framely_logo.png"
-              alt="Framely"
-              className="h-12 sm:h-16 md:h-20 object-contain cursor-pointer"
-            />
-          </Link>
+                src="/framely_logo.png"
+                alt="Framely"
+                className="h-12 sm:h-16 md:h-20 object-contain cursor-pointer"
+              />
+        </Link>
 
-          <ul className="hidden md:flex space-x-4 text-sm font-medium text-gray-300">
-            <Link to="/"><li className="hover:text-white cursor-pointer transition">Home</li></Link>
-            <Link to="/tv-shows"><li className="hover:text-white cursor-pointer transition">TV Shows</li></Link>
-            <Link to="/movies"><li className="hover:text-white cursor-pointer transition">Movies</li></Link>
-            <Link to="/new-popular"><li className="hover:text-white cursor-pointer transition">New &amp; Popular</li></Link>
-            <Link to="/my-list"><li className="hover:text-white cursor-pointer transition">My List</li></Link>
-          </ul>
+          <nav className="hidden md:block" aria-label="Main navigation">
+            <ul className="flex items-center gap-1 text-[15px] font-regular">
+              {NAV_LINKS.map((link) => (
+                <li key={link.to}>
+                  <Link
+                    to={link.to}
+                    className={`px-4 py-2.5 rounded-full transition-all duration-150 ${
+                      isActive(link.to)
+                        ? "bg-[#7d7c7c]/70 text-white font-semibold"
+                        : "text-[#e5e5e5] hover:text-white hover:bg-[#616060]/25"
+                    }`}
+                  >
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
         </div>
 
-        <div className="flex items-center space-x-2 sm:space-x-3 md:space-x-4 text-white">
+        <div className="flex items-center gap-3 md:gap-4 text-white">
           {/* Search with typeahead */}
           <div
             ref={searchContainerRef}
             className="relative"
           >
             <div
-              className={`relative flex items-center ${
-                showSearch ? "bg-black/80 border border-white/20 rounded-lg" : ""
+              className={`flex items-center gap-1 transition-all duration-300 ${
+                showSearch ? "bg-black/80 border border-white/40 rounded px-2 py-1" : ""
               } p-1 transition-[background-color,border-color] duration-300`}
             >
               <form
                 onSubmit={handleSearchSubmit}
                 className={`flex items-center transition-[width] duration-300 ${
-                  showSearch ? "w-40 sm:w-56 md:w-72" : "w-5 sm:w-6"
+                  showSearch ? "w-36 sm:w-52 md:w-64" : "w-5 sm:w-6"
                 }`}
               >
                 <button
@@ -216,24 +235,21 @@ const Navbar: React.FC = () => {
                   className="focus:outline-none flex-shrink-0"
                   aria-label="Open search"
                 >
-                  <Search className="w-5 h-5 sm:w-6 sm:h-6 cursor-pointer" />
+                  <Search className="w-[18px] h-[18px] cursor-pointer" />
                 </button>
                 <input
                   ref={searchInputRef}
                   type="text"
                   id="navbar-search-input"
-                  className={`bg-transparent text-white text-sm border-none focus:ring-0 outline-none ml-2 w-full ${
+                  className={`bg-transparent text-white text-sm border-none focus:ring-0 outline-none ml-2 w-full placeholder-gray-400 ${
                     showSearch ? "block" : "hidden"
                   }`}
                   placeholder="Titles, people, genres"
                   value={searchInput}
                   onChange={handleInputChange}
                   onKeyDown={handleKeyDown}
-                  onFocus={() => {
-                    if (suggestions.length > 0) setShowSuggestions(true);
-                  }}
+                  onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
                   onBlur={() => {
-                    // Slight delay to allow click on suggestion to register
                     setTimeout(() => {
                       if (!searchInput) setShowSearch(false);
                     }, 150);
@@ -251,7 +267,7 @@ const Navbar: React.FC = () => {
               <div
                 id="search-suggestions"
                 role="listbox"
-                className="absolute top-full right-0 mt-1 w-80 sm:w-96 bg-[#1a1a1a]/95 backdrop-blur-md border border-white/10 rounded-lg shadow-2xl overflow-hidden z-[200]"
+                className="absolute top-full right-0 mt-1 w-80 sm:w-96 bg-[#141414]/98 backdrop-blur-md border border-white/10 rounded shadow-2xl overflow-hidden z-[200]"
               >
                 {suggestionsLoading ? (
                   <div className="flex items-center gap-3 px-4 py-3">
@@ -263,21 +279,21 @@ const Navbar: React.FC = () => {
                     {suggestions.map((suggestion, idx) => {
                       const title = getDisplayTitle(suggestion);
                       const year = getReleaseYear(suggestion);
-                      const isActive = idx === activeSuggestion;
+                      const isActiveItem = idx === activeSuggestion;
                       const posterSrc = suggestion.poster_path || suggestion.backdrop_path;
 
                       return (
                         <li
                           key={suggestion.id}
                           role="option"
-                          aria-selected={isActive}
+                          aria-selected={isActiveItem}
                           className={`flex items-center gap-3 px-3 py-2.5 cursor-pointer transition-colors group ${
-                            isActive
+                            isActiveItem
                               ? "bg-white/15"
                               : "hover:bg-white/10"
                           }`}
                           onMouseDown={(e) => {
-                            e.preventDefault(); // prevent blur firing before click
+                            e.preventDefault();
                             handleSuggestionSelect(suggestion);
                           }}
                           onMouseEnter={() => setActiveSuggestion(idx)}
@@ -387,37 +403,19 @@ const Navbar: React.FC = () => {
             initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
-            transition={{ type: 'spring', bounce: 0, duration: 0.3 }}
+            transition={{ type: "spring", bounce: 0, duration: 0.3 }}
             className="md:hidden bg-[#141414]/95 backdrop-blur-xl absolute top-full left-0 w-full p-4 flex flex-col space-y-4 text-center border-t border-white/[0.06]"
           >
-            <Link
-              to="/"
-              onClick={() => setIsMobileMenuOpen(false)}
-              className="text-white hover:text-gray-300 transition-colors"
-            >
-              Home
-            </Link>
-            <Link
-              to="/my-list"
-              onClick={() => setIsMobileMenuOpen(false)}
-              className="text-white hover:text-gray-300 transition-colors"
-            >
-              My List
-            </Link>
-            <Link
-              to="/tv-shows"
-              onClick={() => setIsMobileMenuOpen(false)}
-              className="text-white hover:text-gray-300 transition-colors"
-            >
-              TV Shows
-            </Link>
-            <Link
-              to="/movies"
-              onClick={() => setIsMobileMenuOpen(false)}
-              className="text-white hover:text-gray-300 transition-colors"
-            >
-              Movies
-            </Link>
+            {NAV_LINKS.map((link) => (
+              <Link
+                key={link.to}
+                to={link.to}
+                onClick={() => setIsMobileMenuOpen(false)}
+                className={`transition-colors ${isActive(link.to) ? "text-white font-semibold" : "text-gray-300 hover:text-white"}`}
+              >
+                {link.label}
+              </Link>
+            ))}
 
             {/* Mobile search */}
             <form

@@ -7,7 +7,7 @@ const MyList: React.FC = () => {
   const { myList } = useAppStore();
 
   return (
-    <div className="relative h-screen bg-[#141414] pt-24">
+    <div className="relative min-h-screen bg-[#141414] pt-24">
       <Navbar />
       <div className="px-4 md:px-10">
         <h2 className="text-white text-2xl font-semibold mb-6">My List</h2>

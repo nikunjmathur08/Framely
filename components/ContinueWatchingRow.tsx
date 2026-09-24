@@ -34,12 +34,12 @@ const ContinueWatchingRow: React.FC<ContinueWatchingRowProps> = ({ items, onRemo
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-100px" }}
       transition={{ type: 'spring', bounce: 0, duration: 0.5 }}
-      className="h-fit px-2 sm:px-4 md:px-10 mb-6 sm:mb-8 relative pointer-events-none first:-mt-20 md:first:-mt-24"
+      className="h-fit px-4 md:px-14 mb-4 sm:mb-6 relative pointer-events-none"
       aria-labelledby="continue-watching-heading"
     >
-      <h2 
+      <h2
         id="continue-watching-heading"
-        className="text-sm font-semibold text-[#e5e5e5] sm:text-lg md:text-2xl mb-3 sm:mb-4 pointer-events-auto inline-block"
+        className="text-[13px] sm:text-sm md:text-[15px] font-semibold text-[#e5e5e5] hover:text-white transition duration-200 mb-2 sm:mb-3 pointer-events-auto inline-block cursor-pointer"
       >
         Continue Watching
       </h2>

@@ -364,20 +364,15 @@ const MoreInfoModal: React.FC = () => {
               {getReleaseYear() && (
                 <span className="text-gray-300">{getReleaseYear()}</span>
               )}
-              <span className="border border-gray-500 px-1.5 py-0.5 text-xs text-gray-400">
-                HD
-              </span>
-              <span className="text-gray-300">
-                {selectedMovie.runtime
-                  ? formatDuration(selectedMovie.runtime)
-                  : selectedMovie.number_of_seasons
-                  ? `${selectedMovie.number_of_seasons} Season${
-                      selectedMovie.number_of_seasons > 1 ? "s" : ""
-                    }`
-                  : mediaType === "movie"
-                  ? "1h 50m"
-                  : "1 Season"}
-              </span>
+              {(selectedMovie.runtime || selectedMovie.number_of_seasons) ? (
+                <span className="text-gray-300">
+                  {selectedMovie.runtime
+                    ? formatDuration(selectedMovie.runtime)
+                    : `${selectedMovie.number_of_seasons} Season${
+                        selectedMovie.number_of_seasons > 1 ? "s" : ""
+                      }`}
+                </span>
+              ) : null}
             </div>
 
             {/* Description and Metadata Grid */}
@@ -531,7 +526,7 @@ const MoreInfoModal: React.FC = () => {
                   {/* Episodes List */}
                   <div className="space-y-2">
                     {episodesLoading ? (
-                      <div className="text-center py-8 text-gray-400">
+                      <div className="text-center pt-8 text-gray-400">
                         Loading episodes...
                       </div>
                     ) : episodes.length > 0 ? (
@@ -609,7 +604,7 @@ const MoreInfoModal: React.FC = () => {
               )}
             {/* More Like This Section */}
             {(recommendations.length > 0 || recommendationsLoading) && (
-                <div className="pt-6 border-t border-gray-800">
+                <div className="pt-6">
                   <h3 className="text-xl font-semibold text-white mb-4">
                     More Like This
                   </h3>
@@ -653,16 +648,13 @@ const MoreInfoModal: React.FC = () => {
                           />
                           <div className="p-3">
                             <div className="flex items-center justify-between mb-2">
+                              <p className="text-white text-md font-medium line-clamp-1 mb-1">
+                                {rec.title || rec.name}
+                              </p>
                               <span className="text-[#46d369] text-xs font-semibold">
-                                {(rec.vote_average * 10).toFixed(0)}% Match
-                              </span>
-                              <span className="border border-gray-600 px-1 py-0.5 text-[10px] text-gray-400">
-                                HD
+                                {(rec.vote_average * 10).toFixed(0)}%
                               </span>
                             </div>
-                            <p className="text-white text-sm font-medium line-clamp-1 mb-1">
-                              {rec.title || rec.name}
-                            </p>
                             <p className="text-gray-400 text-xs line-clamp-2">
                               {rec.overview}
                             </p>

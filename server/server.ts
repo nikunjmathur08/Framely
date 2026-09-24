@@ -170,8 +170,11 @@ app.get('/api/movies/homepage', validateApiKey, async (req: Request, res: Respon
     const detailPromises = Array.from(itemsToEnrich.values()).map(async ({ id, type }) => {
         try {
             const endpoint = type === 'tv' ? `/tv/${id}` : `/movie/${id}`;
+            const appendFields = type === 'tv'
+              ? 'images,keywords,content_ratings'
+              : 'images,keywords,release_dates';
             const response = await retryAxiosRequest(() =>
-              axios.get(`${TMDB_BASE_URL}${endpoint}?append_to_response=images`, {
+              axios.get(`${TMDB_BASE_URL}${endpoint}?append_to_response=${appendFields}`, {
                 headers: { Authorization: `Bearer ${TMDB_API_KEY}` },
                 httpsAgent: tmdbAgent,
                 timeout: 15000
@@ -245,8 +248,11 @@ async function enrichWithDetails(items: any[], type: 'tv' | 'movie', limit: numb
   const detailPromises = uniqueIds.map(async (id) => {
     try {
       const endpoint = type === 'tv' ? `/tv/${id}` : `/movie/${id}`;
+      const appendFields = type === 'tv'
+        ? 'images,keywords,content_ratings'
+        : 'images,keywords,release_dates';
       const response = await retryAxiosRequest(() =>
-        axios.get(`${TMDB_BASE_URL}${endpoint}?append_to_response=images`, {
+        axios.get(`${TMDB_BASE_URL}${endpoint}?append_to_response=${appendFields}`, {
           headers: { Authorization: `Bearer ${TMDB_API_KEY}` },
           httpsAgent: tmdbAgent,
           timeout: 15000

@@ -43,7 +43,7 @@ const Search: React.FC = () => {
   }, [query]);
 
   return (
-    <div className="relative h-screen w-full bg-[#141414] pt-24 overflow-x-hidden">
+    <div className="relative min-h-screen w-full bg-[#141414] pt-24">
       <Navbar />
       <div className="px-4 md:px-10">
         <h2 className="text-white text-2xl font-semibold mb-6">

@@ -14,7 +14,9 @@ export interface ContinueWatchingItem {
 /**
  * Hook to get continue watching items from watch history.
  * Combines watch history with movie data to create displayable items.
- * 
+ * Falls back to a minimal Movie stub for entries (e.g. TV shows) that
+ * are not present in the allMovies pool, so they are never silently dropped.
+ *
  * @param allMovies - All available movies from the store to match against
  * @returns Array of continue watching items sorted by last watched (most recent first)
  */
@@ -46,8 +48,26 @@ export function useContinueWatching(allMovies: Movie[]): ContinueWatchingItem[] 
 
       // Find the movie in our data
       const movieId = parseInt(id, 10);
-      const movie = movieMap.get(movieId);
-      
+      let movie = movieMap.get(movieId);
+
+      // If not found in the pool (e.g. a TV show navigated to directly),
+      // build a minimal stub so the card can still be rendered.
+      // The card will show a placeholder poster/backdrop until the user
+      // revisits the title and full metadata is available.
+      if (!movie && history.mediaType) {
+        movie = {
+          id: movieId,
+          title: undefined,
+          name: undefined,
+          backdrop_path: null,
+          poster_path: null,
+          overview: '',
+          vote_average: 0,
+          genre_ids: [],
+          media_type: history.mediaType,
+        } satisfies Movie;
+      }
+
       if (movie) {
         items.push({
           id,

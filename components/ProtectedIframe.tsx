@@ -1,5 +1,12 @@
 import React from 'react';
 
+declare module 'react' {
+  interface IframeHTMLAttributes<T> extends HTMLAttributes<T> {
+    webkitAllowFullScreen?: boolean | string;
+    mozAllowFullScreen?: boolean | string;
+  }
+}
+
 interface ProtectedIframeProps {
   src: string;
   title?: string;
@@ -18,11 +25,14 @@ const ProtectedIframe: React.FC<ProtectedIframeProps> = React.memo(({
   className = 'w-full h-full border-0'
 }) => {
   return (
-    <div className="relative w-full h-full" style={{ minHeight: 0 }}>
+    <div className="relative w-full h-full" style={{ minHeight: 0, position: 'relative' }}>
       <iframe
         src={src}
         className={className}
+        style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
         allowFullScreen
+        webkitAllowFullScreen
+        mozAllowFullScreen
         allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
         title={title}
       />

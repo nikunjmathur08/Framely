@@ -36,7 +36,7 @@ const App: React.FC = () => {
 
   return (
     <ErrorBoundary>
-      <div className="app bg-[#141414] min-h-screen text-white overflow-x-hidden">
+      <div className="app bg-[#141414] min-h-screen text-white" style={{ overflowX: 'clip' }}>
         <Suspense fallback={<PageLoader />}>
           <AnimatePresence mode="wait">
             <Routes location={location} key={location.pathname}>

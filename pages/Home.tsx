@@ -48,7 +48,10 @@ const Home: React.FC = () => {
     ...data.trending,
     ...data.topRated,
     ...data.action,
+    ...data.comedy,
     ...data.horror,
+    ...data.romance,
+    ...data.documentaries,
     ...data.upcoming,
     ...data.hindi,
     ...myList,
@@ -76,12 +79,22 @@ const Home: React.FC = () => {
 
   return (
     <div className="relative min-h-screen bg-[#141414]">
+      {/* Netflix-style top gradient — starts at top of page (shows through transparent navbar),
+          fades warm maroon → dark by the time content rows appear */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-0 top-0 z-0 h-[80vh]"
+        style={{ background: 'linear-gradient(to bottom, #1f0b0b 0%, #1a0909 12%, #160808 25%, #141414 60%)' }}
+      />
       <WhatsNewModal />
       <Navbar />
-      <main className="relative mb-24 pb-8 lg:space-y-6">
+      <main className="relative z-10 mb-24">
+        {/* Hero banner — self-contained block, rows sit below it (Netflix layout) */}
         <Banner movie={bannerMovie} loading={loading} />
-        <section className="space-y-0 relative z-20">
-          {/* Continue Watching - shown first if user has items */}
+
+        {/* Content rows — start cleanly below the banner with no overlap */}
+        <section className="relative z-20 space-y-2 pt-6 pb-8" style={{ overflowX: 'clip' }}>
+          {/* Watch It Again / Continue Watching - shown first if user has items */}
           {continueWatchingItems.length > 0 && (
             <ContinueWatchingRow
               items={continueWatchingItems}
@@ -96,7 +109,7 @@ const Home: React.FC = () => {
           <Row title="Upcoming Movies & Shows" movies={data.upcoming} loading={loading} />
           <Row title="Top Rated" movies={data.topRated} loading={loading} />
           <Row title="Popular in India" movies={data.hindi} loading={loading} />
-          <Row title="Action Thrillers" movies={data.action} loading={loading}/>
+          <Row title="Action Thrillers" movies={data.action} loading={loading} />
           <Row title="Scary Movies" movies={data.horror} loading={loading} />
         </section>
       </main>

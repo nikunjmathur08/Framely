@@ -314,12 +314,22 @@ const MovieCard: React.FC<Props> = memo(({
               <div className="flex items-center gap-1 sm:gap-2 text-[9px] sm:text-[10px] font-semibold flex-wrap">
                 <span className="text-[#46d369]">{(movie.vote_average * 10).toFixed(0)}% Match</span>
                 <span className="text-gray-400 border border-gray-500 px-1 rounded-[2px] text-[9px]">HD</span>
-                <span className="text-gray-400">
-                  {movie.runtime ? formatDuration(movie.runtime) : movie.number_of_seasons ? `${movie.number_of_seasons} Season${movie.number_of_seasons > 1 ? "s" : ""}` : mediaType === "movie" ? "1h 50m" : "1 Season"}
-                </span>
+                {(movie.runtime || movie.number_of_seasons) ? (
+                  <span className="text-gray-400">
+                    {movie.runtime
+                      ? formatDuration(movie.runtime)
+                      : `${movie.number_of_seasons} Season${
+                          movie.number_of_seasons > 1 ? "s" : ""
+                        }`}
+                  </span>
+                ) : null}
               </div>
               <div className="flex flex-wrap items-center gap-1.5 text-[9px] text-white">
-                <span className="text-gray-300 line-clamp-1">{genreNames.length > 0 ? genreNames.join(" • ") : "Exciting • Drama • Sci-Fi"}</span>
+                {genreNames.length > 0 && (
+                  <span className="text-gray-300 line-clamp-1">
+                    {genreNames.join(" • ")}
+                  </span>
+                )}
               </div>
             </motion.div>
           )}

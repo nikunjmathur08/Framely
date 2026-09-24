@@ -145,10 +145,11 @@ const Watch: React.FC = () => {
             season: newSeason ?? currentHistory?.season, 
             episode: newEpisode ?? currentHistory?.episode,
             timestamp, 
-            duration 
+            duration,
+            mediaType: mediaType as 'movie' | 'tv',
         });
     }
-  }, [id, getWatchHistory, updateWatchHistory]);
+  }, [id, mediaType, getWatchHistory, updateWatchHistory]);
 
   // Consolidated Event Listener
   useEffect(() => {
@@ -280,7 +281,7 @@ const Watch: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen w-full bg-[#0a0a0a] text-white flex flex-col overflow-x-hidden">
+    <div className="min-h-screen w-full bg-[#0a0a0a] text-white flex flex-col overflow-x-clip">
       {/* Ad Blocker Modal */}
       {showAdBlockerModal && (
         <AdBlockerModal
@@ -304,7 +305,7 @@ const Watch: React.FC = () => {
       </div>
 
       {/* Player Section */}
-      <div className="w-full aspect-video max-h-[70vh] bg-black relative shadow-2xl">
+      <div className="w-full aspect-video max-h-[70vh] bg-black relative shadow-2xl" style={{ position: 'relative' }}>
         <ProtectedIframe
           src={currentSrc}
           title={mediaType === 'tv' && tvDetails ? `${tvDetails.name} - S${season} E${episode}` : (movieDetails?.title || 'Movie')}

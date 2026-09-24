@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { getImageUrl } from "../services/tmdb";
 import { BannerProps } from "../types";
 import { Info, Play, Volume2, VolumeX } from "lucide-react";
@@ -6,24 +6,36 @@ import { useNavigate } from "react-router-dom";
 import { useAppStore } from "../store/useAppStore";
 import { useTrailerEager } from "../hooks/useTrailer";
 import { logger } from "../utils/logger";
+import { deriveBannerTags } from "../utils/bannerTags";
 import YouTube from "react-youtube";
 import axios from "axios";
 
 const Banner: React.FC<BannerProps> = ({ movie, loading }) => {
   const navigate = useNavigate();
-  const { openMoreInfo, setPlayingTrailer, setBannerTrailerState } = useAppStore();
+  const { openMoreInfo, setBannerTrailerState } = useAppStore();
   const { trailer } = useTrailerEager(movie || { id: 0 });
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
   const [player, setPlayer] = useState<any>(null);
-  // Local logo path – may be populated lazily if movie.images is missing
   const [logoPath, setLogoPath] = useState<string | null>(null);
+
+  const mediaLabel = movie?.media_type === "tv" || movie?.first_air_date ? "Series" : "Movie";
+  const releaseYear = movie?.release_date
+    ? new Date(movie.release_date).getFullYear()
+    : movie?.first_air_date
+    ? new Date(movie.first_air_date).getFullYear()
+    : null;
+  
+  const seasons = movie?.number_of_seasons ? `${movie.number_of_seasons} Season${movie.number_of_seasons > 1 ? "s" : ""}`
+    : null;
+
+  // Derive data-driven tags from TMDB keywords / vote data
+  const bannerTags = deriveBannerTags(movie ?? null);
 
   // Sync logoPath from movie.images (fast path) or fetch on-demand (fallback)
   useEffect(() => {
     if (!movie) return;
 
-    // Fast path: images already enriched by backend
     const logos = movie.images?.logos;
     if (logos && logos.length > 0) {
       const preferred = logos.find((l) => l.iso_639_1 === "en") || logos[0];
@@ -75,7 +87,7 @@ const Banner: React.FC<BannerProps> = ({ movie, loading }) => {
   const onEnd = () => {
     logger.log("Trailer ended, reverting to static banner");
     setIsPlaying(false);
-    setIsMuted(true); // Reset mute state
+    setIsMuted(true);
   };
 
   const toggleMute = () => {
@@ -100,30 +112,21 @@ const Banner: React.FC<BannerProps> = ({ movie, loading }) => {
     }
   };
 
-  const handlePlayTrailer = () => {
-    if (trailer && movie) {
-      setPlayingTrailer(trailer, movie);
-      window.location.hash = `play=${trailer}`;
-    }
-  };
-
   const handleMoreInfo = () => {
     if (movie) {
       let currentTime = 0;
       
-      // Stop Banner's player and capture current playback position
       if (player && isPlaying) {
-        currentTime = player.getCurrentTime(); // Get exact playback position
+        currentTime = player.getCurrentTime();
         player.pauseVideo();
       }
       setIsPlaying(false);
       
-      // Pass the playing state, trailer, timestamp, and mute state to the modal
       setBannerTrailerState({
         wasPlaying: isPlaying,
         trailerId: trailer,
         playbackTime: currentTime,
-        wasMuted: isMuted
+        wasMuted: isMuted,
       });
       
       openMoreInfo(movie);
@@ -131,19 +134,16 @@ const Banner: React.FC<BannerProps> = ({ movie, loading }) => {
   };
 
   if (loading || !movie) {
-    return <div className="h-[70vh] bg-[#141414] animate-pulse" />;
+    return <div className="h-[56vw] min-h-[400px] max-h-[95vh] bg-[#141414] animate-pulse" />;
   }
 
   return (
     <header
-      className="relative h-[70vh] md:h-[85vh] object-cover overflow-hidden"
+      className="relative h-[56vw] min-h-[400px] max-h-[85vh] overflow-hidden rounded-2xl mx-4 md:mx-14 mt-20 md:mt-24"
       style={{
-        backgroundImage: `url("${getImageUrl(
-          movie.backdrop_path,
-          "original"
-        )}")`,
+        backgroundImage: `url(${getImageUrl(movie.backdrop_path, "original")})`,
         backgroundSize: "cover",
-        backgroundPosition: "center center",
+        backgroundPosition: "center top",
       }}
     >
       {isPlaying && trailer && (
@@ -171,16 +171,13 @@ const Banner: React.FC<BannerProps> = ({ movie, loading }) => {
         </div>
       )}
 
-      <div
-        className={`absolute inset-0 transition-opacity duration-700 ${
-          isPlaying ? "bg-black/20" : "bg-black/30"
-        }`}
-      />
-
+      <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent pointer-events-none" />
+      <div className="absolute bottom-0 w-full h-1/2 bg-gradient-to-t from-black/60 via-black/20 to-transparent pointer-events-none" />
+      
       {isPlaying && trailer && (
         <button
           onClick={toggleMute}
-          className="absolute bottom-1/4 right-2 sm:right-4 md:right-10 z-20 p-2 sm:p-2.5 md:p-3 rounded-full border-2 border-white/60 bg-black/30 hover:bg-black/50 transition-all duration-300 hover:scale-110"
+          className="absolute top-4 right-4 md:top-6 md:right-6 z-20 p-2 rounded-full border border-white/40 bg-black/20 hover:bg-black/40 backdrop-blur-sm transition-all duration-200"
           aria-label={isMuted ? "Unmute" : "Mute"}
         >
           {isMuted ? (
@@ -191,46 +188,69 @@ const Banner: React.FC<BannerProps> = ({ movie, loading }) => {
         </button>
       )}
 
-      <div className="relative flex flex-col justify-end h-full px-4 pb-16 sm:pb-20 md:pb-24 space-y-2 sm:space-y-3 md:space-y-4 md:px-10 lg:w-[60%] xl:w-[50%] z-40">
+      {/* Main Content Area */}
+      <div className="relative flex flex-col justify-end h-full px-6 pb-8 md:pb-12 md:px-12 lg:w-[60%] xl:w-[50%] z-10 space-y-3">
         {logoPath ? (
           <img
             src={getImageUrl(logoPath, "original")}
             alt={movie.title || movie.name || movie.original_name}
-            className={`w-full object-contain drop-shadow-2xl transition-all duration-700 ${
+            className={`w-full object-contain object-left drop-shadow-2xl transition-all duration-700 ${
               isPlaying
-                ? "max-w-[200px] sm:max-w-xs md:max-w-sm"
-                : "max-w-[250px] sm:max-w-md md:max-w-lg lg:max-w-xl"
+                ? "max-w-[160px] sm:max-w-[200px] md:max-w-[260px]"
+                : "max-w-[200px] sm:max-w-[320px] md:max-w-[420px] lg:max-w-[480px]"
             }`}
           />
         ) : (
           <h1
             className={`font-bold text-white drop-shadow-lg transition-all duration-700 ${
               isPlaying
-                ? "text-xl sm:text-2xl md:text-3xl lg:text-4xl"
-                : "text-2xl sm:text-3xl md:text-5xl lg:text-7xl"
+                ? "text-xl sm:text-2xl md:text-3xl"
+                : "text-3xl sm:text-4xl md:text-6xl lg:text-7xl"
             }`}
           >
             {movie.title || movie.name || movie.original_name}
           </h1>
         )}
 
+        <div className="flex items-center gap-1.5 text-[11px] sm:text-xs text-[#bcbcbc] font-medium flex-wrap">
+          <span>{mediaLabel}</span>
+          {movie.genres && movie.genres.length > 0 && (
+            <>
+              <span className="opacity-40">•</span>
+              <span>{movie.genres.slice(0,2).map(g => g.name).join(", ")}</span>
+            </>
+          )}
+          {releaseYear && (
+            <>
+              <span className="opacity-40">•</span>
+              <span>{releaseYear}</span>
+            </>
+          )}
+          {seasons && (
+            <>
+              <span className="opacity-40">•</span>
+              <span>{seasons} Seasons</span>
+            </>
+          )}
+        </div>
+
         {!isPlaying && (
-          <p className="max-w-xs text-xs sm:text-sm text-shadow-md text-white md:max-w-lg md:text-lg lg:max-w-2xl font-medium drop-shadow-md transition-opacity duration-500">
-            {truncate(movie.overview, 150)}
+          <p className="text-[13px] sm:text-sm md:text-base text-white/90 leading-snug drop-shadow-sm max-w-md">
+            {truncate(movie.overview, 160)}
           </p>
         )}
 
-        <div className="flex space-x-2 sm:space-x-3">
+        <div className="flex items-center gap-2 sm:gap-3 pt-1">
           <button
             onClick={handlePlay}
-            className="flex items-center gap-x-1 sm:gap-x-2 rounded px-3 py-1.5 sm:px-5 sm:py-2 text-xs sm:text-sm font-semibold transition-[transform,opacity] hover:opacity-75 active:scale-[0.97] md:px-8 md:py-2.5 bg-white text-black"
+            className="flex items-center gap-1.5 bg-white text-black font-semibold text-sm sm:text-[15px] px-4 sm:px-6 py-1.5 sm:py-2 rounded-full transition-opacity hover:opacity-75 active:scale-[0.97]"
           >
             <Play className="h-4 w-4 sm:h-5 sm:w-5 fill-black" />
             Play
           </button>
           <button
             onClick={handleMoreInfo}
-            className="flex items-center gap-x-1 sm:gap-x-2 rounded px-3 py-1.5 sm:px-5 sm:py-2 text-xs sm:text-sm font-semibold transition-[transform,opacity] hover:opacity-75 active:scale-[0.97] md:px-8 md:py-2.5 bg-[gray]/70 text-white"
+            className="flex items-center gap-1.5 bg-[#6d6d6e]/70 text-white font-semibold text-sm sm:text-[15px] px-4 sm:px-6 py-1.5 sm:py-2 rounded-full transition-opacity hover:bg-[#6d6d6e]/90 active:scale-[0.97]"
           >
             <Info className="h-4 w-4 sm:h-5 sm:w-5" />
             More Info
@@ -238,7 +258,20 @@ const Banner: React.FC<BannerProps> = ({ movie, loading }) => {
         </div>
       </div>
 
-      <div className="absolute bottom-0 w-full h-32 bg-gradient-to-t from-[#141414] to-transparent pointer-events-none" />
+      {/* Dynamic Tags (Bottom Right) — driven by TMDB keywords & vote data */}
+      {bannerTags.length > 0 && (
+        <div className="absolute bottom-8 right-8 hidden md:flex items-center gap-3 z-20">
+          {bannerTags.map((tag) => (
+            <div
+              key={tag.label}
+              className="flex items-center gap-1.5 bg-black/60 backdrop-blur-md border border-white/20 px-3 py-1.5 rounded-md text-white text-[13px] font-medium shadow-xl"
+            >
+              <span role="img" aria-hidden="true">{tag.icon}</span>
+              {tag.label}
+            </div>
+          ))}
+        </div>
+      )}
     </header>
   );
 };

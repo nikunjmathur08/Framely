@@ -144,7 +144,7 @@ const Browse: React.FC<BrowseProps> = ({ category }) => {
       : null;
 
   return (
-    <div className="relative min-h-screen bg-[#141414] lg:h-[140vh] overflow-x-hidden">
+    <div className="relative min-h-screen bg-[#141414] lg:min-h-[140vh]">
       <Navbar />
       <main className="relative pb-8 lg:space-y-6">
         <Banner movie={bannerMovie} loading={loading} />

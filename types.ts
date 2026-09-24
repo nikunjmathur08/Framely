@@ -28,6 +28,23 @@ export interface Movie {
   recommendations?: {
     results?: Movie[];
   };
+
+  // Keywords — used to detect award tags (emmy, oscar, golden globe, etc.)
+  keywords?: {
+    results?: Array<{ id: number; name: string }>; // movies
+    keywords?: Array<{ id: number; name: string }>; // TV (different key from TMDB)
+  };
+
+  // Age certification — TV: content_ratings, Movies: release_dates
+  content_ratings?: {
+    results?: Array<{ iso_3166_1: string; rating: string }>;
+  };
+  release_dates?: {
+    results?: Array<{
+      iso_3166_1: string;
+      release_dates: Array<{ certification: string; type: number }>;
+    }>;
+  };
 }
 
 export interface Genre {
