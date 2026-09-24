@@ -44,7 +44,8 @@ const Navbar: React.FC = () => {
 
   // Scroll detection
   useEffect(() => {
-    const handleScroll = () => setIsScrolled(window.scrollY > 50);
+    // Only blur the navbar once the user scrolls past the hero section (~80vh)
+    const handleScroll = () => setIsScrolled(window.scrollY > (window.innerHeight * 0.8));
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);

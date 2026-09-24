@@ -78,14 +78,13 @@ const Home: React.FC = () => {
   }
 
   return (
-    <div className="relative min-h-screen bg-[#141414]">
-      {/* Netflix-style top gradient — starts at top of page (shows through transparent navbar),
-          fades warm maroon → dark by the time content rows appear */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-x-0 top-0 z-0 h-[80vh]"
-        style={{ background: 'linear-gradient(to bottom, #1f0b0b 0%, #1a0909 12%, #160808 25%, #141414 60%)' }}
-      />
+    <div 
+      className="relative min-h-screen bg-[#141414]"
+      style={{
+        backgroundImage: 'linear-gradient(to bottom, rgba(120, 15, 15, 0.4) 0px, rgba(60, 10, 10, 0.3) 150px, rgba(20, 20, 20, 1) 500px)',
+        backgroundRepeat: 'no-repeat'
+      }}
+    >
       <WhatsNewModal />
       <Navbar />
       <main className="relative z-10 mb-24">

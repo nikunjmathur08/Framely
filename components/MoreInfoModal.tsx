@@ -275,18 +275,6 @@ const MoreInfoModal: React.FC = () => {
                     iframeClassName="w-full h-full"
                   />
 
-                  {/* Mute/Unmute Button */}
-                  <button
-                    onClick={toggleMute}
-                    className="absolute bottom-4 right-4 z-50 bg-black/70 hover:bg-black/90 rounded-full p-3 transition-colors group"
-                    title={isMuted ? "Unmute" : "Mute"}
-                  >
-                    {isMuted ? (
-                      <VolumeX className="w-5 h-5 text-white group-hover:scale-110 transition-transform" />
-                    ) : (
-                      <Volume2 className="w-5 h-5 text-white group-hover:scale-110 transition-transform" />
-                    )}
-                  </button>
                 </div>
               ) : (
                 /* Static Backdrop Image (fallback when no trailer) */
@@ -330,26 +318,42 @@ const MoreInfoModal: React.FC = () => {
               )}
 
               {/* Action Buttons */}
-              <div className="flex items-center gap-3 mb-4">
-                <button
-                  onClick={handlePlay}
-                  className="bg-white hover:bg-white/90 active:scale-[0.97] text-black font-bold px-4 py-1.5 sm:px-6 sm:py-2 md:px-8 md:py-3 rounded flex items-center gap-2 transition-[transform,background-color] text-xs sm:text-sm md:text-base"
-                >
-                  <Play className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 fill-black" />
-                  <span>Play</span>
-                </button>
+              <div className="flex items-center justify-between w-full mb-4 pr-8">
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={handlePlay}
+                    className="bg-white hover:bg-white/90 active:scale-[0.97] text-black font-bold px-4 py-1.5 sm:px-6 sm:py-2 md:px-8 md:py-3 rounded flex items-center gap-2 transition-[transform,background-color] text-xs sm:text-sm md:text-base"
+                  >
+                    <Play className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 fill-black" />
+                    <span>Play</span>
+                  </button>
 
-                <button
-                  onClick={handleListToggle}
-                  className="border-2 border-gray-400 text-white hover:border-white active:scale-90 transition-[transform,border-color] rounded-full w-8 h-8 sm:w-9 sm:h-9 md:w-11 md:h-11 flex items-center justify-center bg-[#2a2a2a]/60"
-                  title={added ? "Remove from My List" : "Add to My List"}
-                >
-                  {added ? (
-                    <Check className="w-4 h-4 sm:w-5 sm:h-5" />
-                  ) : (
-                    <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
-                  )}
-                </button>
+                  <button
+                    onClick={handleListToggle}
+                    className="border-2 border-gray-400 text-white hover:border-white active:scale-90 transition-[transform,border-color] rounded-full w-8 h-8 sm:w-9 sm:h-9 md:w-11 md:h-11 flex items-center justify-center bg-[#2a2a2a]/60"
+                    title={added ? "Remove from My List" : "Add to My List"}
+                  >
+                    {added ? (
+                      <Check className="w-4 h-4 sm:w-5 sm:h-5" />
+                    ) : (
+                      <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
+                    )}
+                  </button>
+                </div>
+
+                {isPlaying && trailer && (
+                  <button
+                    onClick={toggleMute}
+                    className="border-2 border-gray-400 text-white hover:border-white active:scale-90 transition-all rounded-full p-2 sm:p-2.5 bg-[#2a2a2a]/60 flex items-center justify-center"
+                    title={isMuted ? "Unmute" : "Mute"}
+                  >
+                    {isMuted ? (
+                      <VolumeX className="w-4 h-4 sm:w-5 sm:h-5" />
+                    ) : (
+                      <Volume2 className="w-4 h-4 sm:w-5 sm:h-5" />
+                    )}
+                  </button>
+                )}
               </div>
             </div>
           </div>
@@ -386,6 +390,17 @@ const MoreInfoModal: React.FC = () => {
 
               {/* Right Column - Additional Info */}
               <div className="space-y-3 text-sm">
+                {/* Cast (Top 3) */}
+                {cast.length > 0 && (
+                  <div>
+                    <span className="text-gray-500">Cast: </span>
+                    <span className="text-gray-300">
+                      {cast.slice(0, 3).map((c: any) => c.name).join(", ")}
+                      {cast.length > 3 ? ", more" : ""}
+                    </span>
+                  </div>
+                )}
+
                 {/* Genres */}
                 {getGenreNames().length > 0 && (
                   <div>
@@ -406,64 +421,7 @@ const MoreInfoModal: React.FC = () => {
               </div>
             </div>
 
-            {/* Cast Section */}
-            {(cast.length > 0 || castLoading) && (
-              <div className="pt-6 border-t border-gray-800">
-                <h3 className="text-xl font-semibold text-white mb-4">Cast</h3>
-                {castLoading ? (
-                  <div className="flex gap-4 overflow-x-auto scrollbar-hide pb-2">
-                    {[...Array(6)].map((_, i) => (
-                      <div key={i} className="flex-shrink-0 flex flex-col items-center gap-2 w-20 animate-pulse">
-                        <div className="w-16 h-16 rounded-full bg-gray-700" />
-                        <div className="h-3 w-14 bg-gray-700 rounded" />
-                        <div className="h-2.5 w-12 bg-gray-800 rounded" />
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="flex gap-4 overflow-x-auto scrollbar-hide pt-2">
-                    {cast.slice(0, 12).map((member: any) => {
-                      const initials = member.name
-                        ? member.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()
-                        : '?';
-                      return (
-                        <div
-                          key={member.id}
-                          className="flex-shrink-0 flex flex-col items-center gap-2 w-20 group cursor-default"
-                          title={`${member.name}${member.character ? ` as ${member.character}` : ''}`}
-                        >
-                          {/* Profile photo */}
-                          <div className="relative w-16 h-16 rounded-full overflow-hidden ring-2 ring-white/10 group-hover:ring-white/40 transition-all duration-300">
-                            {member.profile_path ? (
-                              <img
-                                src={`https://image.tmdb.org/t/p/w185${member.profile_path}`}
-                                alt={member.name}
-                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                                loading="lazy"
-                              />
-                            ) : (
-                              <div className="w-full h-full bg-gradient-to-br from-gray-700 to-gray-800 flex items-center justify-center">
-                                <span className="text-gray-300 text-sm font-bold">{initials}</span>
-                              </div>
-                            )}
-                          </div>
-                          {/* Actor name */}
-                          <p className="text-white text-xs font-medium text-center leading-tight truncate w-full">
-                            {member.name}
-                          </p>
-                          {/* Character name */}
-                          {member.character && (
-                            <p className="text-gray-500 text-[10px] text-center leading-tight truncate w-full -mt-1">
-                              {member.character}
-                            </p>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            )}
+
 
             {/* Episodes Section - Only for TV Series */}
             {mediaType === "tv" &&
@@ -665,6 +623,25 @@ const MoreInfoModal: React.FC = () => {
                   )}
                 </div>
               )}
+              
+            {/* Full Cast List (Bottom) */}
+            {(cast.length > 0 || castLoading) && (
+              <div className="pt-6 border-t border-gray-800">
+                <h3 className="text-xl font-medium text-white mb-3">
+                  About {displayTitle}
+                </h3>
+                {castLoading ? (
+                  <div className="h-4 bg-gray-700/50 rounded w-full animate-pulse" />
+                ) : (
+                  <div className="text-sm leading-relaxed">
+                    <span className="text-gray-500">Cast: </span>
+                    <span className="text-gray-300">
+                      {cast.map((c: any) => c.name).join(", ")}
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </motion.div>
       </motion.div>

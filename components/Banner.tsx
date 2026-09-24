@@ -177,7 +177,7 @@ const Banner: React.FC<BannerProps> = ({ movie, loading }) => {
       {isPlaying && trailer && (
         <button
           onClick={toggleMute}
-          className="absolute top-4 right-4 md:top-6 md:right-6 z-20 p-2 rounded-full border border-white/40 bg-black/20 hover:bg-black/40 backdrop-blur-sm transition-all duration-200"
+          className="absolute top-4 right-4 md:top-7 md:right-6 z-20 p-2 rounded-full bg-black/20 hover:bg-black/40 backdrop-blur-md transition-all duration-200"
           aria-label={isMuted ? "Unmute" : "Mute"}
         >
           {isMuted ? (
@@ -264,7 +264,7 @@ const Banner: React.FC<BannerProps> = ({ movie, loading }) => {
           {bannerTags.map((tag) => (
             <div
               key={tag.label}
-              className="flex items-center gap-1.5 bg-black/60 backdrop-blur-md border border-white/20 px-3 py-1.5 rounded-md text-white text-[13px] font-medium shadow-xl"
+              className="flex items-center gap-1.5 bg-black/20 backdrop-blur-sm px-3 py-1.5 rounded-md text-white text-[13px] font-medium shadow-xl"
             >
               <span role="img" aria-hidden="true">{tag.icon}</span>
               {tag.label}
