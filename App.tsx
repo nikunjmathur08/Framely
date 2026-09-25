@@ -12,6 +12,8 @@ const Search = lazy(() => import('./pages/Search'));
 const MyList = lazy(() => import('./pages/MyList'));
 const MovieDetails = lazy(() => import('./pages/MovieDetails'));
 const TvDetails = lazy(() => import('./pages/TvDetails'));
+const LiveTV = lazy(() => import('./pages/LiveTV'));
+const WatchLive = lazy(() => import('./pages/WatchLive'));
 
 // Loading fallback component
 const PageLoader: React.FC = () => (
@@ -45,6 +47,7 @@ const App: React.FC = () => {
               <Route path="/tv-shows" element={<PageWrapper><Browse category="tv" /></PageWrapper>} />
               <Route path="/movies" element={<PageWrapper><Browse category="movie" /></PageWrapper>} />
               <Route path="/new-popular" element={<PageWrapper><Browse category="popular" /></PageWrapper>} />
+              <Route path="/live-tv" element={<PageWrapper><LiveTV /></PageWrapper>} />
               
               {/* SEO-friendly detail pages with slug support */}
               <Route path="/movie/:id" element={<PageWrapper><MovieDetails /></PageWrapper>} />
@@ -54,6 +57,7 @@ const App: React.FC = () => {
               
               {/* Watch routes */}
               <Route path="/watch/:type/:id" element={<PageWrapper><Watch /></PageWrapper>} />
+              <Route path="/watch/live/:id" element={<PageWrapper><WatchLive /></PageWrapper>} />
               
               {/* Utility routes */}
               <Route path="/search" element={<PageWrapper><Search /></PageWrapper>} />

@@ -6,6 +6,7 @@ import dotenv from 'dotenv';
 import { logger } from '../utils/logger';
 import helmet from 'helmet';
 import { rateLimit } from 'express-rate-limit';
+import { liveScheduleHandler } from './liveScheduleHandler.js';
 
 // Load .env for local development (not used in Vercel)
 // override: true ensures server/.env values take precedence over any root .env
@@ -514,6 +515,9 @@ app.use('/api/tmdb', validateApiKey, async (req: Request, res: Response) => {
     }
   }
 });
+
+// ── Live TV Schedule ─────────────────────────────────────────────────────────
+app.get('/api/live-schedule', liveScheduleHandler);
 
 // Start server only if not running in Vercel environment
 if (process.env.NODE_ENV !== 'production') {

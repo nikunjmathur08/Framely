@@ -23,6 +23,7 @@ const NAV_LINKS = [
   { label: "Shows", to: "/tv-shows"},
   { label: "Movies", to: "/movies"},
   { label: "New & Popular", to: "/new-popular"},
+  { label: "Live TV", to: "/live-tv"},
   { label: "My List", to: "/my-list"},
 ]
 
