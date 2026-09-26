@@ -27,7 +27,7 @@ const WatchLive: React.FC = () => {
 
   if (!id) return null;
 
-  const iframeUrl = `${providerUrl}/stream/stream-${id}.php`;
+  const iframeUrl = `${providerUrl}/cast/stream-${id}.php`;
   const displayName = channelInfo?.channelName || `Channel ${id}`;
 
   return (
@@ -59,7 +59,7 @@ const WatchLive: React.FC = () => {
       </div>
 
       {/* Player — same sizing as Watch.tsx */}
-      <div className="w-full aspect-video max-h-[70vh] bg-black relative shadow-2xl">
+      <div className="w-full max-w-6xl mx-auto aspect-video bg-black relative shadow-2xl overflow-hidden md:mt-4 md:rounded-2xl">
         <ProtectedIframe
           src={iframeUrl}
           title={displayName}

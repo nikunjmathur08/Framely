@@ -6,6 +6,7 @@ import MoreInfoModal from './components/MoreInfoModal';
 import Home from './pages/Home';
 import Browse from './pages/Browse';
 import TestError from './pages/TestError';
+import { usePopupBlocker } from './hooks/usePopupBlocker';
 
 const Watch = lazy(() => import('./pages/Watch'));
 const Search = lazy(() => import('./pages/Search'));
@@ -35,6 +36,7 @@ const PageWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
 
 const App: React.FC = () => {
   const location = useLocation();
+  usePopupBlocker();
 
   return (
     <ErrorBoundary>

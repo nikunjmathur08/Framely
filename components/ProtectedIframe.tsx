@@ -12,6 +12,8 @@ interface ProtectedIframeProps {
   title?: string;
   className?: string;
   iframeClassName?: string;
+  referrerPolicy?: React.HTMLAttributeReferrerPolicy;
+  sandbox?: string;
 }
 
 /**
@@ -25,13 +27,18 @@ const ProtectedIframe: React.FC<ProtectedIframeProps> = React.memo(({
   src, 
   title = 'Video Player',
   className = '',
-  iframeClassName = 'w-full h-full border-0'
+  iframeClassName = 'w-full h-full border-0',
+  referrerPolicy = 'no-referrer',
+  sandbox,
 }) => {
   const [overlayActive, setOverlayActive] = useState(true);
 
   const handleOverlayClick = () => {
     setOverlayActive(false);
-    setTimeout(() => setOverlayActive(true), 1500);
+    // Tight 700ms window: just enough time for the very next click to pass through 
+    // to the real play button, but drops the shield back fast enough to catch 
+    // subsequent invisible ad layers (which often stack 2-3 deep).
+    setTimeout(() => setOverlayActive(true), 700);
   };
 
   return (
@@ -44,7 +51,8 @@ const ProtectedIframe: React.FC<ProtectedIframeProps> = React.memo(({
         webkitAllowFullScreen
         mozAllowFullScreen
         allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
-        referrerPolicy="no-referrer"
+        referrerPolicy={referrerPolicy}
+        sandbox={sandbox}
         title={title}
       />
       {/* Transparent overlay — intercepts first click to suppress popup ads */}

@@ -305,7 +305,7 @@ const Watch: React.FC = () => {
       </div>
 
       {/* Player Section */}
-      <div className="w-full aspect-video max-h-[70vh] bg-black relative shadow-2xl" style={{ position: 'relative' }}>
+      <div className="w-full max-w-6xl mx-auto aspect-video bg-black relative shadow-2xl overflow-hidden md:mt-4 md:rounded-2xl">
         <ProtectedIframe
           src={currentSrc}
           title={mediaType === 'tv' && tvDetails ? `${tvDetails.name} - S${season} E${episode}` : (movieDetails?.title || 'Movie')}
