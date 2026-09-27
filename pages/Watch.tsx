@@ -309,6 +309,8 @@ const Watch: React.FC = () => {
         <ProtectedIframe
           src={currentSrc}
           title={mediaType === 'tv' && tvDetails ? `${tvDetails.name} - S${season} E${episode}` : (movieDetails?.title || 'Movie')}
+          referrerPolicy="no-referrer"
+          sandbox="allow-scripts allow-same-origin allow-forms allow-presentation allow-popups allow-downloads"
         />
       </div>
 

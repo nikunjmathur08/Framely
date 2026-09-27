@@ -14,7 +14,7 @@ const WatchLive: React.FC = () => {
   const [channelInfo, setChannelInfo] = useState<ChannelInfo | null>(null);
   const [imgError, setImgError] = useState(false);
 
-  const providerUrl = import.meta.env.VITE_STREAM_PROVIDER_URL || 'https://dlive.sx';
+  const providerUrl = import.meta.env.VITE_STREAM_PROVIDER_URL || 'https://daddylive.mov';
 
   useEffect(() => {
     if (!id) return;
@@ -27,7 +27,7 @@ const WatchLive: React.FC = () => {
 
   if (!id) return null;
 
-  const iframeUrl = `${providerUrl}/cast/stream-${id}.php`;
+  const iframeUrl = `${providerUrl}/player/embed.php?id=${id}`;
   const displayName = channelInfo?.channelName || `Channel ${id}`;
 
   return (

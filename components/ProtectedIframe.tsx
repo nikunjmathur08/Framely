@@ -1,11 +1,6 @@
 import React, { useState } from 'react';
 
-declare module 'react' {
-  interface IframeHTMLAttributes<T> extends HTMLAttributes<T> {
-    webkitAllowFullScreen?: boolean | string;
-    mozAllowFullScreen?: boolean | string;
-  }
-}
+// Module declaration removed
 
 interface ProtectedIframeProps {
   src: string;
@@ -28,7 +23,7 @@ const ProtectedIframe: React.FC<ProtectedIframeProps> = React.memo(({
   title = 'Video Player',
   className = '',
   iframeClassName = 'w-full h-full border-0',
-  referrerPolicy = 'no-referrer',
+  referrerPolicy,
   sandbox,
 }) => {
   const [overlayActive, setOverlayActive] = useState(true);
@@ -47,9 +42,6 @@ const ProtectedIframe: React.FC<ProtectedIframeProps> = React.memo(({
         src={src}
         className={iframeClassName}
         style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 0 }}
-        allowFullScreen
-        webkitAllowFullScreen
-        mozAllowFullScreen
         allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
         referrerPolicy={referrerPolicy}
         sandbox={sandbox}

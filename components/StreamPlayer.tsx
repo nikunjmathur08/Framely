@@ -8,8 +8,8 @@ const StreamPlayer: React.FC<StreamPlayerProps> = ({ id }) => {
   const [error, setError] = useState(false);
   
   // Use VITE_STREAM_PROVIDER_URL or fallback
-  const providerUrl = import.meta.env.VITE_STREAM_PROVIDER_URL || 'https://dlive.sx';
-  const iframeUrl = `${providerUrl}/stream/stream-${id}.php`;
+  const providerUrl = import.meta.env.VITE_STREAM_PROVIDER_URL || 'https://daddylive.mov';
+  const iframeUrl = `${providerUrl}/player/embed.php?id=${id}`;
 
   if (error) {
     return (

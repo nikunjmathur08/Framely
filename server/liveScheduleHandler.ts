@@ -4,19 +4,31 @@ interface Channel {
   id: string;
   channelName: string;
   logoUrl?: string;
+  category?: string;
+  status?: string;
 }
 
-const PROVIDER = 'https://dlive.sx';
+const PROVIDER = 'https://daddylive.mov';
+
+let cachedChannels: Channel[] | null = null;
+let lastCacheTime = 0;
+const CACHE_TTL = 15 * 60 * 1000; // 15 minutes
 
 export async function liveScheduleHandler(req: Request, res: Response) {
+  // Add aggressive cache headers for any proxy/browser
+  res.setHeader('Cache-Control', 'public, s-maxage=900, stale-while-revalidate=86400');
+
+  if (cachedChannels && Date.now() - lastCacheTime < CACHE_TTL) {
+    return res.json(cachedChannels);
+  }
+
   const providerUrl = process.env.VITE_STREAM_PROVIDER_URL || PROVIDER;
 
   try {
-    const response = await fetch(`${providerUrl}/24-7-channels.php`, {
+    const response = await fetch(`${providerUrl}/api/channels`, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml',
-        'Accept-Language': 'en-US,en;q=0.9',
+        'Accept': 'application/json',
       },
       signal: AbortSignal.timeout(8000),
     });
@@ -25,53 +37,42 @@ export async function liveScheduleHandler(req: Request, res: Response) {
       throw new Error(`Provider returned ${response.status}`);
     }
 
-    const html = await response.text();
-    const channels: Channel[] = [];
-    const seenIds = new Set<string>();
-
-    // The page renders channel cards as anchor tags. Each card contains:
-    //   <a href="/watch.php?id=302">
-    //     <img src="logos/abc_usa.png" ...>
-    //     <span>ABC USA</span>
-    //     <span>ID: 302</span>
-    //   </a>
-    //
-    // We match the full anchor block, then extract id, logo, and name from within it.
-    const cardRegex = /<a[^>]+href=["'](?:[^"']*)?\/watch\.php\?id=(\d+)["'][^>]*>([\s\S]*?)<\/a>/gi;
-    let match: RegExpExecArray | null;
-
-    while ((match = cardRegex.exec(html)) !== null) {
-      const id = match[1];
-      if (seenIds.has(id)) continue;
-      seenIds.add(id);
-
-      const innerHtml = match[2];
-
-      // Try to extract a logo <img src="...">
-      let logoUrl: string | undefined;
-      const imgMatch = innerHtml.match(/<img[^>]+src=["']([^"']+)["']/i);
-      if (imgMatch) {
-        const src = imgMatch[1];
-        // Resolve relative paths to absolute
-        logoUrl = src.startsWith('http') ? src : `${providerUrl}/${src.replace(/^\//, '')}`;
-      }
-
-      // Extract text content (strip all HTML tags)
-      const rawText = innerHtml.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
-      // Text is typically: "Channel Name ID: 302" — take the part before "ID:"
-      const channelName = rawText.split(/\s+ID:/i)[0].trim();
-      if (!channelName) continue;
-
-      channels.push({ id, channelName, ...(logoUrl ? { logoUrl } : {}) });
+    const data = await response.json();
+    
+    if (!Array.isArray(data)) {
+      throw new Error('Invalid data format received from provider');
     }
+
+    const channels: Channel[] = data
+      .filter((item: any) => item.channel_name && item.url)
+      .map((item: any) => {
+        // Extract the ID from the URL (e.g. ?id=521 or ?id=stream-144)
+        // If we can't parse it easily, fallback to the full URL encoded or a hash.
+        let id = '';
+        const idMatch = item.url.match(/id=([^&]+)/);
+        if (idMatch) {
+            id = idMatch[1];
+        } else {
+            // fallback, generate from name
+            id = encodeURIComponent(item.channel_name.toLowerCase().replace(/\s+/g, '-'));
+        }
+        
+        return {
+          id: String(id),
+          channelName: item.channel_name,
+        };
+      });
 
     if (channels.length === 0) {
-      throw new Error('No channels found — page structure may have changed');
+      throw new Error('No channels parsed from provider');
     }
+
+    cachedChannels = channels;
+    lastCacheTime = Date.now();
 
     return res.json(channels);
   } catch (err: any) {
-    console.error('[live-schedule] Scrape failed:', err.message);
+    console.error('[live-schedule] Fetch failed:', err.message);
     return res.status(502).json({ error: 'Failed to fetch channels from provider', details: err.message });
   }
 }

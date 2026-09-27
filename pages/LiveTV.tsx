@@ -76,12 +76,21 @@ const LiveTV: React.FC = () => {
   useEffect(() => {
     const fetchChannels = async () => {
       try {
+        const cached = sessionStorage.getItem('live_channels_cache');
+        if (cached) {
+          setChannels(JSON.parse(cached));
+          setLoading(false);
+          return;
+        }
+
         const backendUrl = import.meta.env.VITE_BACKEND_URL ||
           (import.meta.env.PROD ? '' : 'http://localhost:3001');
         const res = await fetch(`${backendUrl}/api/live-schedule`);
         if (!res.ok) throw new Error(`Server error ${res.status}`);
         const data = await res.json();
         if (!Array.isArray(data)) throw new Error('Unexpected response');
+        
+        sessionStorage.setItem('live_channels_cache', JSON.stringify(data));
         setChannels(data);
       } catch (err: any) {
         setError(err.message || 'Failed to load channels');
