@@ -15,7 +15,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   
   if (req.method === 'OPTIONS') { res.status(200).end(); return; }
 
-  const providerUrl = process.env.VITE_STREAM_PROVIDER_URL || 'https://daddylive.mov';
+  const providerUrl = process.env.VITE_STREAM_PROVIDER_URL || 'https://cinevid.st';
 
   try {
     const response = await fetch(`${providerUrl}/api/channels`, {
@@ -30,26 +30,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const data = await response.json();
     
-    if (!Array.isArray(data)) {
+    if (!data || !Array.isArray(data.channels)) {
       throw new Error('Invalid data format received from provider');
     }
 
-    const channels: Channel[] = data
-      .filter((item: any) => item.channel_name && item.url)
-      .map((item: any) => {
-        let id = '';
-        const idMatch = item.url.match(/id=([^&]+)/);
-        if (idMatch) {
-            id = idMatch[1];
-        } else {
-            id = encodeURIComponent(item.channel_name.toLowerCase().replace(/\s+/g, '-'));
-        }
-        
-        return {
-          id: String(id),
-          channelName: item.channel_name,
-        };
-      });
+    const channels: Channel[] = data.channels
+      .filter((item: any) => item.id && item.name && item.status !== 'offline')
+      .map((item: any) => ({
+        id: String(item.id),
+        channelName: item.name,
+        logoUrl: item.logo ? new URL(item.logo, providerUrl).toString() : undefined,
+        category: item.category,
+        status: item.status,
+      }));
 
     if (channels.length === 0) throw new Error('No channels parsed');
 

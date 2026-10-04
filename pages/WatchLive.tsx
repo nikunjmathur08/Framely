@@ -14,7 +14,7 @@ const WatchLive: React.FC = () => {
   const [channelInfo, setChannelInfo] = useState<ChannelInfo | null>(null);
   const [imgError, setImgError] = useState(false);
 
-  const providerUrl = import.meta.env.VITE_STREAM_PROVIDER_URL || 'https://daddylive.mov';
+  const providerUrl = import.meta.env.VITE_STREAM_PROVIDER_URL || 'https://cinevid.st';
 
   useEffect(() => {
     if (!id) return;
@@ -27,7 +27,7 @@ const WatchLive: React.FC = () => {
 
   if (!id) return null;
 
-  const iframeUrl = `${providerUrl}/player/embed.php?id=${id}`;
+  const iframeUrl = `${providerUrl}/iptv/player?id=${id}`;
   const displayName = channelInfo?.channelName || `Channel ${id}`;
 
   return (

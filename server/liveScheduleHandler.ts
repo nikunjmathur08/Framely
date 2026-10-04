@@ -8,7 +8,7 @@ interface Channel {
   status?: string;
 }
 
-const PROVIDER = 'https://daddylive.mov';
+const PROVIDER = 'https://cinevid.st';
 
 let cachedChannels: Channel[] | null = null;
 let lastCacheTime = 0;
@@ -39,29 +39,19 @@ export async function liveScheduleHandler(req: Request, res: Response) {
 
     const data = await response.json();
     
-    if (!Array.isArray(data)) {
+    if (!data || !Array.isArray(data.channels)) {
       throw new Error('Invalid data format received from provider');
     }
 
-    const channels: Channel[] = data
-      .filter((item: any) => item.channel_name && item.url)
-      .map((item: any) => {
-        // Extract the ID from the URL (e.g. ?id=521 or ?id=stream-144)
-        // If we can't parse it easily, fallback to the full URL encoded or a hash.
-        let id = '';
-        const idMatch = item.url.match(/id=([^&]+)/);
-        if (idMatch) {
-            id = idMatch[1];
-        } else {
-            // fallback, generate from name
-            id = encodeURIComponent(item.channel_name.toLowerCase().replace(/\s+/g, '-'));
-        }
-        
-        return {
-          id: String(id),
-          channelName: item.channel_name,
-        };
-      });
+    const channels: Channel[] = data.channels
+      .filter((item: any) => item.id && item.name && item.status !== 'offline')
+      .map((item: any) => ({
+        id: String(item.id),
+        channelName: item.name,
+        logoUrl: item.logo ? new URL(item.logo, providerUrl).toString() : undefined,
+        category: item.category,
+        status: item.status,
+      }));
 
     if (channels.length === 0) {
       throw new Error('No channels parsed from provider');
