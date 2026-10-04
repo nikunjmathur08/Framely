@@ -1,4 +1,6 @@
 import { Request, Response } from 'express';
+import fs from 'fs';
+import path from 'path';
 
 interface Channel {
   id: string;
@@ -8,61 +10,41 @@ interface Channel {
   status?: string;
 }
 
-const PROVIDER = 'https://cinevid.st';
+const LOGO_BASE = 'https://cinevid.st';
+
+// Channel list is read from channels.json at the project root
+// (cinevid.st blocks server-side requests).
+const CHANNELS_FILE = path.resolve(__dirname, '..', 'channels.json');
+const FALLBACK_FILE = path.resolve(process.cwd(), 'channels.json');
 
 let cachedChannels: Channel[] | null = null;
-let lastCacheTime = 0;
-const CACHE_TTL = 15 * 60 * 1000; // 15 minutes
+
+function loadChannels(): Channel[] {
+  if (cachedChannels) return cachedChannels;
+  const file = fs.existsSync(CHANNELS_FILE) ? CHANNELS_FILE : FALLBACK_FILE;
+  const data = JSON.parse(fs.readFileSync(file, 'utf-8'));
+  if (!data || !Array.isArray(data.channels)) {
+    throw new Error('Invalid channels.json format');
+  }
+  cachedChannels = data.channels
+    .filter((item: any) => item.id && item.name && item.status !== 'offline')
+    .map((item: any) => ({
+      id: String(item.id),
+      channelName: item.name,
+      logoUrl: item.logo ? new URL(item.logo, LOGO_BASE).toString() : undefined,
+      category: item.category,
+      status: item.status,
+    }));
+  return cachedChannels!;
+}
 
 export async function liveScheduleHandler(req: Request, res: Response) {
-  // Add aggressive cache headers for any proxy/browser
   res.setHeader('Cache-Control', 'public, s-maxage=900, stale-while-revalidate=86400');
 
-  if (cachedChannels && Date.now() - lastCacheTime < CACHE_TTL) {
-    return res.json(cachedChannels);
-  }
-
-  const providerUrl = process.env.VITE_STREAM_PROVIDER_URL || PROVIDER;
-
   try {
-    const response = await fetch(`${providerUrl}/api/channels`, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-        'Accept': 'application/json',
-      },
-      signal: AbortSignal.timeout(8000),
-    });
-
-    if (!response.ok) {
-      throw new Error(`Provider returned ${response.status}`);
-    }
-
-    const data = await response.json();
-    
-    if (!data || !Array.isArray(data.channels)) {
-      throw new Error('Invalid data format received from provider');
-    }
-
-    const channels: Channel[] = data.channels
-      .filter((item: any) => item.id && item.name && item.status !== 'offline')
-      .map((item: any) => ({
-        id: String(item.id),
-        channelName: item.name,
-        logoUrl: item.logo ? new URL(item.logo, providerUrl).toString() : undefined,
-        category: item.category,
-        status: item.status,
-      }));
-
-    if (channels.length === 0) {
-      throw new Error('No channels parsed from provider');
-    }
-
-    cachedChannels = channels;
-    lastCacheTime = Date.now();
-
-    return res.json(channels);
+    return res.json(loadChannels());
   } catch (err: any) {
-    console.error('[live-schedule] Fetch failed:', err.message);
-    return res.status(502).json({ error: 'Failed to fetch channels from provider', details: err.message });
+    console.error('[live-schedule] Load failed:', err.message);
+    return res.status(500).json({ error: 'Failed to load channels', details: err.message });
   }
 }
