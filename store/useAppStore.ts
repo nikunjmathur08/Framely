@@ -16,6 +16,14 @@ export interface MovieData {
   hindi: Movie[];
 }
 
+export interface LiveChannel {
+  id: string;
+  channelName: string;
+  logoUrl?: string;
+  category?: string;
+  country?: string;
+}
+
 interface AppState {
   // My List functionality
   myList: Movie[];
@@ -32,6 +40,13 @@ interface AppState {
   movieDataError: Error | null;
   lastFetched: number | null;
   fetchMovieData: (force?: boolean) => Promise<void>;
+
+  // Live channels
+  liveChannels: LiveChannel[];
+  liveChannelsLoading: boolean;
+  liveChannelsError: string | null;
+  lastLiveChannelsFetched: number | null;
+  fetchLiveChannels: (force?: boolean) => Promise<void>;
 
   // Trailer Cache
   trailerCache: Record<number, string | null>;
@@ -102,6 +117,12 @@ export const useAppStore = create<AppState>()(
       movieDataLoading: false,
       movieDataError: null,
       lastFetched: null,
+
+      // Live channels state
+      liveChannels: [],
+      liveChannelsLoading: false,
+      liveChannelsError: null,
+      lastLiveChannelsFetched: null,
 
       // Trailer Cache - NOT persisted to avoid quota issues
       trailerCache: {} as Record<number, string | null>,
@@ -180,6 +201,41 @@ export const useAppStore = create<AppState>()(
       },
       closeMoreInfo: () => {
         set({ selectedMovie: null });
+      },
+
+      // Live channel fetching — called from Home so data is ready before the user navigates to Live TV
+      fetchLiveChannels: async (force = false) => {
+        const { lastLiveChannelsFetched, liveChannelsLoading, liveChannels } = get();
+        const now = Date.now();
+        const isCacheFresh = lastLiveChannelsFetched && now - lastLiveChannelsFetched < CACHE_TTL;
+
+        if (!force && isCacheFresh && liveChannels.length > 0) return;
+        if (liveChannelsLoading) return;
+
+        set({ liveChannelsLoading: true, liveChannelsError: null });
+        try {
+          const res = await fetch('https://vidcdn.vip/api/channels');
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const data = await res.json();
+
+          const channels: LiveChannel[] = (data.channels ?? data)
+            .filter((c: any) => c.id && (c.name || c.channelName) && c.status !== 'offline')
+            .map((c: any) => ({
+              id: String(c.id),
+              channelName: c.name || c.channelName,
+              logoUrl: c.logo
+                ? new URL(c.logo, 'https://vidcdn.vip').toString()
+                : c.logoUrl,
+              category: c.category,
+              country: c.country,
+            }));
+
+          set({ liveChannels: channels, liveChannelsLoading: false, lastLiveChannelsFetched: now });
+          logger.log(`✅ Live channels fetched: ${channels.length}`);
+        } catch (err: any) {
+          logger.error('❌ Error fetching live channels:', err);
+          set({ liveChannelsError: err.message || 'Failed to load channels', liveChannelsLoading: false });
+        }
       },
 
       // Movie data fetching with intelligent caching

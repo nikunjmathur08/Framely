@@ -27,7 +27,7 @@ const WatchLive: React.FC = () => {
 
   if (!id) return null;
 
-  const iframeUrl = `${providerUrl}/iptv/player?id=${id}`;
+  const iframeUrl = `https://cinevid.st/player.html?id=${id}`;
   const displayName = channelInfo?.channelName || `Channel ${id}`;
 
   return (

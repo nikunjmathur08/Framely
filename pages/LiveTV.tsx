@@ -3,14 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import Navbar from '../components/Navbar';
 import { Play, Search, Tv } from 'lucide-react';
+import { useAppStore, LiveChannel } from '../store/useAppStore';
 
-interface Channel {
-  id: string;
-  channelName: string;
-  logoUrl?: string;
-}
-
-const ChannelCard: React.FC<{ channel: Channel; onClick: () => void }> = ({ channel, onClick }) => {
+const ChannelCard: React.FC<{ channel: LiveChannel; onClick: () => void }> = ({ channel, onClick }) => {
   const [imgError, setImgError] = useState(false);
 
   return (
@@ -67,38 +62,16 @@ const ChannelCard: React.FC<{ channel: Channel; onClick: () => void }> = ({ chan
 };
 
 const LiveTV: React.FC = () => {
-  const [channels, setChannels] = useState<Channel[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [searchQuery, setSearchQuery] = useState('');
   const navigate = useNavigate();
+  const [searchQuery, setSearchQuery] = useState('');
 
+  const channels = useAppStore((s) => s.liveChannels);
+  const loading = useAppStore((s) => s.liveChannelsLoading);
+  const error = useAppStore((s) => s.liveChannelsError);
+
+  // If the user lands directly on /live-tv without going through Home, fetch now
   useEffect(() => {
-    const fetchChannels = async () => {
-      try {
-        const cached = sessionStorage.getItem('live_channels_cache');
-        if (cached) {
-          setChannels(JSON.parse(cached));
-          setLoading(false);
-          return;
-        }
-
-        const backendUrl = import.meta.env.VITE_BACKEND_URL ||
-          (import.meta.env.PROD ? '' : 'http://localhost:3001');
-        const res = await fetch(`${backendUrl}/api/live-schedule`);
-        if (!res.ok) throw new Error(`Server error ${res.status}`);
-        const data = await res.json();
-        if (!Array.isArray(data)) throw new Error('Unexpected response');
-        
-        sessionStorage.setItem('live_channels_cache', JSON.stringify(data));
-        setChannels(data);
-      } catch (err: any) {
-        setError(err.message || 'Failed to load channels');
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchChannels();
+    useAppStore.getState().fetchLiveChannels();
   }, []);
 
   const filtered = useMemo(() => {
@@ -107,8 +80,7 @@ const LiveTV: React.FC = () => {
     return channels.filter(c => c.channelName.toLowerCase().includes(q));
   }, [channels, searchQuery]);
 
-  const handleChannelClick = (channel: Channel) => {
-    // Store channel info in sessionStorage so the player page can display it
+  const handleChannelClick = (channel: LiveChannel) => {
     sessionStorage.setItem(`live-channel-${channel.id}`, JSON.stringify({
       channelName: channel.channelName,
       logoUrl: channel.logoUrl || null,

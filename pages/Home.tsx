@@ -27,6 +27,7 @@ const Home: React.FC = () => {
 
   useEffect(() => {
     useAppStore.getState().fetchMovieData();
+    useAppStore.getState().fetchLiveChannels(); // prefetch so Live TV loads instantly
   }, []);
 
   // Get My List and Continue Watching
