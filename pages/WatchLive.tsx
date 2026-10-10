@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, ExternalLink, Radio } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import ProtectedIframe from '../components/ProtectedIframe';
 
 interface ChannelInfo {
@@ -46,15 +46,6 @@ const WatchLive: React.FC = () => {
             <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
             <span className="text-xs font-bold tracking-widest text-red-500 uppercase">Live</span>
           </div>
-          <a
-            href={iframeUrl}
-            target="_blank"
-            rel="noopener noreferrer nofollow"
-            className="flex items-center gap-1.5 text-white/60 hover:text-white transition text-sm bg-white/10 rounded-full px-3 py-1.5"
-          >
-            <ExternalLink className="w-4 h-4" />
-            <span className="hidden sm:block">Open externally</span>
-          </a>
         </div>
       </div>
 
@@ -82,19 +73,11 @@ const WatchLive: React.FC = () => {
           )}
 
           <div className="flex-1">
-            <h1 className="text-2xl md:text-4xl font-bold">{displayName}</h1>
-            <div className="flex items-center gap-3 mt-2 text-sm text-gray-400">
-              <div className="flex items-center gap-1.5">
-                <Radio className="w-4 h-4 text-red-500" />
-                <span>Broadcasting live</span>
-              </div>
-              <span className="text-gray-600">·</span>
-              <span className="text-gray-500">Channel ID: {id}</span>
-            </div>
+            <h1 className="text-2xl md:text-5xl font-bold">{displayName}</h1>
           </div>
         </div>
 
-        <p className="text-gray-500 text-sm leading-relaxed max-w-2xl">
+        <p className="text-gray-500 text-xs leading-relaxed max-w-2xl">
           This is a live broadcast. Content may vary. If the stream is unavailable, try the{' '}
           <a
             href={iframeUrl}
