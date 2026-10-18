@@ -50,11 +50,13 @@ export function useContinueWatching(allMovies: Movie[]): ContinueWatchingItem[] 
       const movieId = parseInt(id, 10);
       let movie = movieMap.get(movieId);
 
-      // If not found in the pool (e.g. a TV show navigated to directly),
+      // If not found in the pool (TV shows are never in the movie pool),
       // build a minimal stub so the card can still be rendered.
-      // The card will show a placeholder poster/backdrop until the user
-      // revisits the title and full metadata is available.
-      if (!movie && history.mediaType) {
+      // Infer media type: if history.mediaType is set use it, otherwise
+      // fall back to 'tv' when season/episode are recorded, else 'movie'.
+      if (!movie) {
+        const inferredType: 'movie' | 'tv' =
+          history.mediaType ?? (history.season ? 'tv' : 'movie');
         movie = {
           id: movieId,
           title: undefined,
@@ -64,20 +66,18 @@ export function useContinueWatching(allMovies: Movie[]): ContinueWatchingItem[] 
           overview: '',
           vote_average: 0,
           genre_ids: [],
-          media_type: history.mediaType,
+          media_type: inferredType,
         } satisfies Movie;
       }
 
-      if (movie) {
-        items.push({
-          id,
-          movie,
-          progress,
-          season: history.season,
-          episode: history.episode,
-          lastWatched: history.lastWatched,
-        });
-      }
+      items.push({
+        id,
+        movie,
+        progress,
+        season: history.season,
+        episode: history.episode,
+        lastWatched: history.lastWatched,
+      });
     });
 
     // Sort by most recently watched first

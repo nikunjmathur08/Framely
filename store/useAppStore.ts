@@ -19,6 +19,7 @@ export interface MovieData {
 export interface LiveChannel {
   id: string;
   channelName: string;
+  slug?: string;
   logoUrl?: string;
   category?: string;
   country?: string;
@@ -223,6 +224,7 @@ export const useAppStore = create<AppState>()(
             .map((c: any) => ({
               id: String(c.id),
               channelName: c.name || c.channelName,
+              slug: c.slug,
               logoUrl: c.logo
                 ? new URL(c.logo, 'https://vidcdn.vip').toString()
                 : c.logoUrl,

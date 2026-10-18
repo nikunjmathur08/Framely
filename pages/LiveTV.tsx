@@ -1,8 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import Navbar from '../components/Navbar';
-import { Play, Search, Tv } from 'lucide-react';
+import { Play, Search, Tv, ExternalLink, ShieldCheck, X } from 'lucide-react';
 import { useAppStore, LiveChannel } from '../store/useAppStore';
 
 const ChannelCard: React.FC<{ channel: LiveChannel; onClick: () => void }> = ({ channel, onClick }) => {
@@ -61,9 +60,165 @@ const ChannelCard: React.FC<{ channel: LiveChannel; onClick: () => void }> = ({ 
   );
 };
 
+/* ── Redirect Modal ─────────────────────────────────────────────────────────── */
+interface RedirectModalProps {
+  channel: LiveChannel;
+  onClose: () => void;
+}
+
+export const getCinevidChannelUrl = (channel: LiveChannel): string => {
+  if (channel.slug) {
+    return `https://cinevid.st/channels/${channel.slug}`;
+  }
+  const cleanName = channel.channelName
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+  const cleanCountry = channel.country ? channel.country.toLowerCase() : '';
+  const fallbackSlug = cleanCountry && !cleanName.endsWith(cleanCountry)
+    ? `${cleanName}-${cleanCountry}`
+    : cleanName;
+
+  return fallbackSlug
+    ? `https://cinevid.st/channels/${fallbackSlug}`
+    : `https://cinevid.st/player.html?id=${channel.id}`;
+};
+
+const RedirectModal: React.FC<RedirectModalProps> = ({ channel, onClose }) => {
+  const [countdown, setCountdown] = useState(5);
+  const targetUrl = getCinevidChannelUrl(channel);
+
+  useEffect(() => {
+    if (countdown <= 0) {
+      window.location.href = targetUrl;
+      return;
+    }
+    const timer = setTimeout(() => setCountdown(c => c - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [countdown, targetUrl]);
+
+  const handleRedirectNow = () => {
+    window.location.href = targetUrl;
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      onClick={onClose}
+    >
+      {/* Backdrop */}
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
+
+      {/* Modal */}
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95, y: 10 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 10 }}
+        transition={{ type: 'spring', bounce: 0.15, duration: 0.4 }}
+        onClick={e => e.stopPropagation()}
+        className="relative w-full max-w-md bg-[#1a1a1a] border border-white/10 rounded-2xl p-6 md:p-8 shadow-2xl"
+      >
+        {/* Close button */}
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 text-gray-500 hover:text-white transition"
+        >
+          <X className="w-5 h-5" />
+        </button>
+
+        {/* Icon */}
+        <div className="flex justify-center mb-5">
+          <div className="w-14 h-14 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center">
+            <ExternalLink className="w-7 h-7 text-red-500" />
+          </div>
+        </div>
+
+        {/* Title */}
+        <h2 className="text-xl font-bold text-white text-center mb-2">
+          Opening External Player
+        </h2>
+        <p className="text-gray-400 text-sm text-center mb-6">
+          You're being redirected to an external website to watch{' '}
+          <span className="text-white font-medium">{channel.channelName}</span>.
+        </p>
+
+        {/* Adblocker tip */}
+        <div className="border border-yellow-500/15 rounded-xl p-4 mb-6">
+          <div className="flex gap-3">
+            <div>
+              <p className="text-yellow-200/90 text-sm font-medium mb-1">Use an Adblocker</p>
+              <p className="text-yellow-200/60 text-xs leading-relaxed">
+                For the best experience, use an adblocker like{' '}
+                <a
+                  href="https://chromewebstore.google.com/detail/ublock-origin-lite/ddkjiahejlhfcafbddmgiahcphecmpfh"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-yellow-300 underline underline-offset-2 hover:text-yellow-200 transition"
+                >
+                  uBlock Origin Lite
+                </a>{' '}
+                or the{' '}
+                <a
+                  href="https://brave.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-yellow-300 underline underline-offset-2 hover:text-yellow-200 transition"
+                >
+                  Brave browser
+                </a>
+                .
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div className="flex flex-col gap-2.5">
+          <button
+            onClick={handleRedirectNow}
+            className="w-full py-3 bg-red-600 hover:bg-red-500 text-white font-semibold rounded-xl transition flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-red-600/20"
+          >
+            <ExternalLink className="w-4 h-4" />
+            Redirect Now
+            {countdown > 0 && (
+              <span className="text-red-200 text-sm font-normal">({countdown}s)</span>
+            )}
+          </button>
+
+          <a
+            href={targetUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={onClose}
+            className="w-full py-2.5 bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white text-sm font-medium rounded-xl transition flex items-center justify-center gap-1.5 cursor-pointer text-center"
+          >
+            Open in new tab instead
+          </a>
+
+          <button
+            onClick={onClose}
+            className="w-full py-2 text-gray-500 hover:text-gray-300 text-xs font-medium transition cursor-pointer"
+          >
+            Cancel
+          </button>
+        </div>
+
+        {/* URL preview */}
+        <p className="text-gray-600 text-[10px] text-center mt-4 truncate">
+          {targetUrl}
+        </p>
+      </motion.div>
+    </motion.div>
+  );
+};
+
+/* ── LiveTV Page ────────────────────────────────────────────────────────────── */
 const LiveTV: React.FC = () => {
-  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedChannel, setSelectedChannel] = useState<LiveChannel | null>(null);
 
   const channels = useAppStore((s) => s.liveChannels);
   const loading = useAppStore((s) => s.liveChannelsLoading);
@@ -79,14 +234,6 @@ const LiveTV: React.FC = () => {
     const q = searchQuery.toLowerCase();
     return channels.filter(c => c.channelName.toLowerCase().includes(q));
   }, [channels, searchQuery]);
-
-  const handleChannelClick = (channel: LiveChannel) => {
-    sessionStorage.setItem(`live-channel-${channel.id}`, JSON.stringify({
-      channelName: channel.channelName,
-      logoUrl: channel.logoUrl || null,
-    }));
-    navigate(`/watch/live/${channel.id}`);
-  };
 
   return (
     <div
@@ -144,7 +291,7 @@ const LiveTV: React.FC = () => {
               <ChannelCard
                 key={channel.id}
                 channel={channel}
-                onClick={() => handleChannelClick(channel)}
+                onClick={() => setSelectedChannel(channel)}
               />
             ))}
           </motion.div>
@@ -157,6 +304,16 @@ const LiveTV: React.FC = () => {
           </div>
         )}
       </main>
+
+      {/* Redirect Modal */}
+      <AnimatePresence>
+        {selectedChannel && (
+          <RedirectModal
+            channel={selectedChannel}
+            onClose={() => setSelectedChannel(null)}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 };

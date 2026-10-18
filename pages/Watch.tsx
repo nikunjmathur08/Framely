@@ -118,7 +118,8 @@ const Watch: React.FC = () => {
   // Apply SEO
   useSeo(seoData || {});
 
-  // Load history on mount
+  // Load history on mount and stamp mediaType so the entry is always identifiable
+  // even if the player never fires a postMessage.
   useEffect(() => {
     if (id) {
       const history = getWatchHistory(id);
@@ -126,8 +127,10 @@ const Watch: React.FC = () => {
         if (history.season) setSeason(history.season);
         if (history.episode) setEpisode(history.episode);
       }
+      updateWatchHistory(id, { mediaType: mediaType as 'movie' | 'tv' });
     }
-  }, [id, getWatchHistory]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
 
   // Check ad blocker
   useEffect(() => {

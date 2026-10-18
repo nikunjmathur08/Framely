@@ -8,6 +8,15 @@ export default defineConfig(({ mode }) => {
       server: {
         port: 5173,
         host: '0.0.0.0',
+        proxy: {
+          // Forward /api/* to the local Express server in development.
+          // Without this, Vite serves index.html for unknown paths and
+          // React Router complains about unmatched routes inside iframes.
+          '/api': {
+            target: 'http://localhost:3001',
+            changeOrigin: true,
+          },
+        },
       },
       plugins: [react()],
       define: {

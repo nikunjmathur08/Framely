@@ -2,9 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import ProtectedIframe from '../components/ProtectedIframe';
+import { useAppStore } from '../store/useAppStore';
 
 interface ChannelInfo {
   channelName: string;
+  slug?: string;
   logoUrl: string | null;
 }
 
@@ -14,21 +16,23 @@ const WatchLive: React.FC = () => {
   const [channelInfo, setChannelInfo] = useState<ChannelInfo | null>(null);
   const [imgError, setImgError] = useState(false);
 
-  const providerUrl = import.meta.env.VITE_STREAM_PROVIDER_URL || 'https://cinevid.st';
-
   useEffect(() => {
     if (!id) return;
-    // Retrieve channel info stored when user clicked from LiveTV page
     try {
       const stored = sessionStorage.getItem(`live-channel-${id}`);
       if (stored) setChannelInfo(JSON.parse(stored));
     } catch { /* ignore */ }
   }, [id]);
 
-  if (!id) return null;
+  const channelFromStore = useAppStore((s) => s.liveChannels.find((c) => c.id === id));
+  const channelSlug = channelFromStore?.slug || channelInfo?.slug;
+  const channelPageUrl = channelSlug
+    ? `https://cinevid.st/channels/${channelSlug}`
+    : `https://cinevid.st/player.html?id=${id}`;
 
-  const iframeUrl = `https://cinevid.st/player.html?id=${id}`;
-  const displayName = channelInfo?.channelName || `Channel ${id}`;
+  const playerUrl = channelPageUrl;
+  const iframeUrl = `/api/proxy?url=${encodeURIComponent(playerUrl)}`;
+  const displayName = channelInfo?.channelName || channelFromStore?.channelName || `Channel ${id}`;
 
   return (
     <div className="min-h-screen w-full bg-[#0a0a0a] text-white flex flex-col overflow-x-clip">
@@ -80,7 +84,7 @@ const WatchLive: React.FC = () => {
         <p className="text-gray-500 text-xs leading-relaxed max-w-2xl">
           This is a live broadcast. Content may vary. If the stream is unavailable, try the{' '}
           <a
-            href={iframeUrl}
+            href={playerUrl}
             target="_blank"
             rel="noopener noreferrer nofollow"
             className="text-white underline underline-offset-2 hover:text-gray-300 transition"
