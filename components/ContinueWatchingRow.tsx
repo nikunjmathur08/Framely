@@ -39,7 +39,7 @@ const ContinueWatchingRow: React.FC<ContinueWatchingRowProps> = ({ items, onRemo
     >
       <h2
         id="continue-watching-heading"
-        className="text-[13px] sm:text-sm md:text-[15px] font-semibold text-[#e5e5e5] hover:text-white transition duration-200 mb-2 sm:mb-3 pointer-events-auto inline-block cursor-pointer"
+        className="w-auto cursor-pointer text-[13px] sm:text-sm md:text-[25px] font-semibold text-[#e5e5e5] hover:text-white transition duration-200 mb-2 sm:mb-3 pointer-events-auto inline-flex items-center gap-1 group/title"
       >
         Continue Watching
       </h2>

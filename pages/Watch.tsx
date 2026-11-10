@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Star, Calendar, Clock, ChevronDown } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
-import axios, { requests, getImageUrl, TMDB_GENRES } from '../services/tmdb';
-import { TvShowDetails, Movie, Season, Episode } from '../types';
+import axios, { requests, TMDB_GENRES } from '../services/tmdb';
+import { TvShowDetails, Movie, Season } from '../types';
 import ProtectedIframe from '../components/ProtectedIframe';
 import AdBlockerModal from '../components/AdBlockerModal';
 import ContentErrorPage from '../components/ContentErrorPage';
@@ -13,62 +12,48 @@ import { useSeo } from '../hooks/useSeo';
 import { generateMovieSchema, generateTvSchema, getFullImageUrl } from '../utils/seoHelpers';
 import { logger } from '../utils/logger';
 
-interface PlayerConfig {
-  id: string;
-  name: string;
-  getSrc: (type: 'tv' | 'movie', id: string, season: number, episode: number, progress?: number) => string;
+interface NxshaHistoryEvent {
+  media: { type: 'movie' | 'tv'; id: string; season?: number; episode?: number };
+  playback: { currentTime: number; duration: number } | null;
 }
 
-const PLAYER_CONFIGS: PlayerConfig[] = [
-  {
-    id: 'cinesrc',
-    name: 'CineSRC',
-    getSrc: (type, id, season, episode, progress) => {
-      const params = new URLSearchParams({ color: '%23e50914', autonext: 'true', autoskip: 'true' });
-      if (progress && progress > 10) params.append('t', Math.floor(progress).toString());
-      if (type === 'movie') {
-        return `https://cinesrc.st/embed/movie/${id}?${params.toString()}`;
-      } else {
-        params.append('s', String(season));
-        params.append('e', String(episode));
-        return `https://cinesrc.st/embed/tv/${id}?${params.toString()}`;
-      }
-    }
-  },
-  {
-    id: 'videasy',
-    name: 'Videasy',
-    getSrc: (type, id, season, episode, progress) => {
-      const baseUrl = 'https://player.videasy.net';
-      const params = new URLSearchParams({ color: 'e50914', nextEpisode: 'true', episodeSelector: 'true', autoplayNextEpisode: 'true', overlay: 'true' });
-      if (progress && progress > 10) params.append('progress', Math.floor(progress).toString());
-      const path = type === 'movie' ? `movie/${id}` : `tv/${id}/${season}/${episode}`;
-      return `${baseUrl}/${path}?${params.toString()}`;
-    }
-  },
-  {
-    id: 'vidplus',
-    name: 'VidPlus',
-    getSrc: (type, id, season, episode, progress) => {
-      const baseUrl = 'https://player.vidplus.to/embed';
-      const params = new URLSearchParams({ autoplay: 'true', nextButton: 'true' });
-      if (progress && progress > 10) params.append('progress', Math.floor(progress).toString());
-      const path = type === 'movie' ? `movie/${id}` : `tv/${id}/${season}/${episode}`;
-      return `${baseUrl}/${path}?${params.toString()}`;
-    }
-  },
-  {
-    id: 'mappleuk',
-    name: 'MappleUK',
-    getSrc: (type, id, season, episode, progress) => {
-      const baseUrl = 'https://mapple.uk/watch';
-      const params = new URLSearchParams({ autoPlay: 'true', nextButton: 'true', autoNext: 'true', theme: 'e50914' });
-      if (progress && progress > 10) params.append('startAt', Math.floor(progress).toString());
-      const path = type === 'movie' ? `movie/${id}` : `tv/${id}-${season}-${episode}`;
-      return `${baseUrl}/${path}?${params.toString()}`;
-    }
+interface NxshaHistoryController {
+  seek: (currentTime: number) => boolean;
+  destroy: () => void;
+}
+
+declare global {
+  interface Window {
+    NxshaHistory?: {
+      attach: (
+        frame: HTMLIFrameElement,
+        options: {
+          historyId: string;
+          onReady?: (event: NxshaHistoryEvent) => void;
+          onProgress?: (event: NxshaHistoryEvent) => void;
+        }
+      ) => NxshaHistoryController;
+    };
   }
-];
+}
+
+let nxshaHistorySdk: Promise<void> | null = null;
+
+const loadNxshaHistorySdk = () => {
+  if (window.NxshaHistory) return Promise.resolve();
+  if (nxshaHistorySdk) return nxshaHistorySdk;
+
+  nxshaHistorySdk = new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    script.src = 'https://nxsha.space/embed-history.js';
+    script.async = true;
+    script.onload = () => resolve();
+    script.onerror = () => reject(new Error('Unable to load Nxsha history support.'));
+    document.head.appendChild(script);
+  });
+
+  return nxshaHistorySdk;
+};
 
 const Watch: React.FC = () => {
   const { type, id } = useParams<{ type: string; id: string }>();
@@ -86,12 +71,11 @@ const Watch: React.FC = () => {
     getWatchHistory, 
     hideAdBlockerModal, 
     setHideAdBlockerModal,
-    preferredPlayer,
-    setPreferredPlayer
   } = useAppStore();
 
   const mediaType = type === 'tv' ? 'tv' : 'movie';
-  const lastUpdateRef = useRef<number>(0);
+  const playerFrameRef = useRef<HTMLIFrameElement>(null);
+  const historyKey = `framely:${mediaType}:${id || ''}`;
 
   // Compute SEO data based on loaded details
   const seoData = useMemo(() => {
@@ -122,15 +106,15 @@ const Watch: React.FC = () => {
   // even if the player never fires a postMessage.
   useEffect(() => {
     if (id) {
-      const history = getWatchHistory(id);
+      const history = getWatchHistory(historyKey) || getWatchHistory(id);
       if (history) {
         if (history.season) setSeason(history.season);
         if (history.episode) setEpisode(history.episode);
       }
-      updateWatchHistory(id, { mediaType: mediaType as 'movie' | 'tv' });
+      updateWatchHistory(historyKey, { mediaType });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id]);
+  }, [id, historyKey, mediaType]);
 
   // Check ad blocker
   useEffect(() => {
@@ -143,66 +127,60 @@ const Watch: React.FC = () => {
 
   const updateHistory = useCallback((newSeason: number | undefined, newEpisode: number | undefined, timestamp?: number, duration?: number) => {
     if (id) {
-        const currentHistory = getWatchHistory(id);
-        updateWatchHistory(id, { 
+        const currentHistory = getWatchHistory(historyKey);
+        const currentMovie = mediaType === 'tv' ? tvDetails : movieDetails;
+        const episodeChanged =
+          newSeason !== undefined && newEpisode !== undefined &&
+          (newSeason !== currentHistory?.season || newEpisode !== currentHistory?.episode);
+        updateWatchHistory(historyKey, {
             season: newSeason ?? currentHistory?.season, 
             episode: newEpisode ?? currentHistory?.episode,
-            timestamp, 
-            duration,
-            mediaType: mediaType as 'movie' | 'tv',
+            timestamp: timestamp ?? (episodeChanged ? 0 : currentHistory?.timestamp),
+            duration: duration ?? (episodeChanged ? undefined : currentHistory?.duration),
+            mediaType,
+            movie: currentMovie || currentHistory?.movie,
         });
     }
-  }, [id, mediaType, getWatchHistory, updateWatchHistory]);
+  }, [id, historyKey, mediaType, tvDetails, movieDetails, getWatchHistory, updateWatchHistory]);
 
-  // Consolidated Event Listener
+  // Nxsha's SDK validates player-origin history messages and provides accurate resume support.
   useEffect(() => {
-    const handleMessage = (event: MessageEvent) => {
-        try {
-            let data = event.data;
-            
-            // Handle string data (Videasy sometimes sends strings)
-            if (typeof data === 'string') {
-              try { data = JSON.parse(data); } catch { return; }
-            }
+    let active = true;
+    let controller: NxshaHistoryController | undefined;
 
-            if (!data) return;
+    loadNxshaHistorySdk()
+      .then(() => {
+        const frame = playerFrameRef.current;
+        if (!active || !frame || !window.NxshaHistory) return;
 
-            // Normalize event data across different players
-            let currentTime: number | undefined;
-            let duration: number | undefined;
+        const savedHistory = getWatchHistory(historyKey) || (id ? getWatchHistory(id) : undefined);
+        const resumeAt = savedHistory?.timestamp;
+        const canResume = resumeAt && resumeAt > 10 &&
+          (!savedHistory.duration || resumeAt < savedHistory.duration * 0.95);
 
-            // CineSRC style
-            if (data.type === 'cinesrc:timeupdate') {
-              currentTime = data.currentTime;
-              duration = data.duration;
-            }
-            // Vidking & MappleUK style
-            else if (data.type === 'PLAYER_EVENT' && data.data) {
-              currentTime = data.data.currentTime;
-              duration = data.data.duration;
-            } 
-            // Videasy style (direct object)
-            else if (data.timestamp !== undefined && data.duration !== undefined) {
-              currentTime = data.timestamp;
-              duration = data.duration;
-            }
+        controller = window.NxshaHistory.attach(frame, {
+          historyId: historyKey,
+          onReady: () => {
+            if (canResume) controller?.seek(resumeAt);
+          },
+          onProgress: (event) => {
+            if (!event.playback) return;
+            updateHistory(
+              event.media.type === 'tv' ? event.media.season : undefined,
+              event.media.type === 'tv' ? event.media.episode : undefined,
+              event.playback.currentTime,
+              event.playback.duration,
+            );
+          },
+        });
+      })
+      .catch((error) => logger.error('Failed to initialize Nxsha history support', error));
 
-            if (currentTime !== undefined) {
-                const now = Date.now();
-                // Throttle updates
-                if (now - lastUpdateRef.current < 5000) return;
-                lastUpdateRef.current = now;
-
-                updateHistory(season, episode, currentTime, duration);
-            }
-        } catch (err) {
-            logger.error("Error processing player message", err);
-        }
+    return () => {
+      active = false;
+      controller?.destroy();
     };
-
-    window.addEventListener('message', handleMessage);
-    return () => window.removeEventListener('message', handleMessage);
-  }, [id, season, episode, updateHistory]);
+  }, [mediaType, id, season, episode, historyKey, getWatchHistory, updateHistory]);
 
   // Fetch Media Details
   useEffect(() => {
@@ -248,16 +226,18 @@ const Watch: React.FC = () => {
   }, [mediaType, id, season]);
 
   const currentSrc = useMemo(() => {
-    const history = id ? getWatchHistory(id) : undefined;
-    const config = PLAYER_CONFIGS.find(p => p.id === preferredPlayer) || PLAYER_CONFIGS[0];
-    
-    // Heuristic: only resume if not near the end
-    const progress = (history?.timestamp && (!history.duration || history.timestamp < history.duration * 0.95)) 
-      ? history.timestamp 
-      : 0;
-
-    return config.getSrc(mediaType, id!, season, episode, progress);
-  }, [id, season, episode, mediaType, getWatchHistory, preferredPlayer]);
+    if (!id) return '';
+    const path = mediaType === 'movie' ? `movie/${id}` : `tv/${id}/${season}/${episode}`;
+    const params = new URLSearchParams({
+      autoplay: 'true',
+      autoplayNext: 'true',
+      color: 'netflix',
+      history: '1',
+      history_id: historyKey,
+      parent_origin: window.location.origin,
+    });
+    return `https://nxsha.space/embed/${path}?${params.toString()}`;
+  }, [id, season, episode, mediaType, historyKey]);
 
   const details = mediaType === 'tv' ? tvDetails : movieDetails;
   const releaseYear = (details?.release_date || details?.first_air_date)?.split('-')[0];
@@ -312,6 +292,7 @@ const Watch: React.FC = () => {
         <ProtectedIframe
           src={currentSrc}
           title={mediaType === 'tv' && tvDetails ? `${tvDetails.name} - S${season} E${episode}` : (movieDetails?.title || 'Movie')}
+          iframeRef={playerFrameRef}
           referrerPolicy="no-referrer"
         />
       </div>
@@ -322,38 +303,6 @@ const Watch: React.FC = () => {
           <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
             <h1 className="text-3xl md:text-5xl font-bold">{details?.title || details?.name}</h1>
             
-            {/* Player Switcher */}
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-gray-500 font-bold uppercase tracking-widest mr-2">Player:</span>
-              <div className="flex flex-wrap gap-2 p-0.5 bg-[#0a0a0a] rounded-lg border border-[#242424]">
-                {PLAYER_CONFIGS.map(player => (
-                  <button
-                    key={player.id}
-                    onClick={() => setPreferredPlayer(player.id)}
-                    className="relative px-4 py-1.5 rounded-md text-[10px] uppercase font-bold tracking-wider transition-colors duration-300 outline-none"
-                  >
-                    <span className={`relative z-10 transition-colors duration-300 ${
-                      preferredPlayer === player.id ? 'text-black' : 'text-gray-400 hover:text-white'
-                    }`}>
-                      {player.name}
-                    </span>
-                    
-                    {preferredPlayer === player.id && (
-                      <motion.div
-                        layoutId="activePlayerPill"
-                        className="absolute inset-0 bg-neutral-200 rounded-md shadow-[0_0_15px_rgba(229,229,229,0.15)]"
-                        transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-                      />
-                    )}
-
-                    {/* Hover state for non-active buttons */}
-                    {preferredPlayer !== player.id && (
-                      <div className="absolute inset-0 rounded-md transition-colors duration-300" />
-                    )}
-                  </button>
-                ))}
-              </div>
-            </div>
           </div>
           
           <div className="flex flex-wrap items-center gap-4 text-sm md:text-base text-gray-400">

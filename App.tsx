@@ -14,6 +14,7 @@ const MyList = lazy(() => import('./pages/MyList'));
 const MovieDetails = lazy(() => import('./pages/MovieDetails'));
 const TvDetails = lazy(() => import('./pages/TvDetails'));
 const LiveTV = lazy(() => import('./pages/LiveTV'));
+const Anime = lazy(() => import('./pages/Anime'));
 const WatchLive = lazy(() => import('./pages/WatchLive'));
 
 // Loading fallback component
@@ -50,6 +51,7 @@ const App: React.FC = () => {
               <Route path="/movies" element={<PageWrapper><Browse category="movie" /></PageWrapper>} />
               <Route path="/new-popular" element={<PageWrapper><Browse category="popular" /></PageWrapper>} />
               <Route path="/live-tv" element={<PageWrapper><LiveTV /></PageWrapper>} />
+              <Route path="/anime" element={<PageWrapper><Anime /></PageWrapper>} />
               
               {/* SEO-friendly detail pages with slug support */}
               <Route path="/movie/:id" element={<PageWrapper><MovieDetails /></PageWrapper>} />

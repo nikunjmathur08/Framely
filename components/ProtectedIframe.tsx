@@ -5,6 +5,7 @@ import React, { useState } from 'react';
 interface ProtectedIframeProps {
   src: string;
   title?: string;
+  iframeRef?: React.Ref<HTMLIFrameElement>;
   className?: string;
   iframeClassName?: string;
   referrerPolicy?: React.HTMLAttributeReferrerPolicy;
@@ -21,6 +22,7 @@ interface ProtectedIframeProps {
 const ProtectedIframe: React.FC<ProtectedIframeProps> = React.memo(({ 
   src, 
   title = 'Video Player',
+  iframeRef,
   className = '',
   iframeClassName = 'w-full h-full border-0',
   referrerPolicy,
@@ -39,10 +41,12 @@ const ProtectedIframe: React.FC<ProtectedIframeProps> = React.memo(({
   return (
     <div className={`relative w-full h-full ${className}`} style={{ minHeight: 0, position: 'relative' }}>
       <iframe
+        ref={iframeRef}
         src={src}
         className={iframeClassName}
         style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 0 }}
         allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
+        allowFullScreen
         referrerPolicy={referrerPolicy}
         sandbox={sandbox}
         title={title}

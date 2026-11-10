@@ -3,6 +3,7 @@ import { persist } from "zustand/middleware";
 import { Movie } from "../types";
 import axios from "axios";
 import { logger } from "../utils/logger";
+import { AnimeCatalog, fetchAnimeCatalog as fetchAnimeCatalogFromSource } from "../services/anime";
 
 export interface MovieData {
   trending: Movie[];
@@ -24,6 +25,8 @@ export interface LiveChannel {
   category?: string;
   country?: string;
 }
+
+const emptyAnimeCatalog: AnimeCatalog = { trending: [], topRated: [], movies: [] };
 
 interface AppState {
   // My List functionality
@@ -48,6 +51,13 @@ interface AppState {
   liveChannelsError: string | null;
   lastLiveChannelsFetched: number | null;
   fetchLiveChannels: (force?: boolean) => Promise<void>;
+
+  // Anime catalog
+  animeCatalog: AnimeCatalog;
+  animeCatalogLoading: boolean;
+  animeCatalogError: string | null;
+  lastAnimeCatalogFetched: number | null;
+  fetchAnimeCatalog: (force?: boolean) => Promise<void>;
 
   // Trailer Cache
   trailerCache: Record<number, string | null>;
@@ -78,9 +88,9 @@ interface AppState {
     wasMuted?: boolean;
   } | null) => void;
   // Watch History State
-  watchHistory: Record<string, { season?: number; episode?: number; lastWatched: number; timestamp?: number; duration?: number; mediaType?: 'movie' | 'tv' }>;
-  updateWatchHistory: (id: number | string, data: { season?: number; episode?: number; timestamp?: number; duration?: number; mediaType?: 'movie' | 'tv' }) => void;
-  getWatchHistory: (id: number | string) => { season?: number; episode?: number; lastWatched: number; timestamp?: number; duration?: number; mediaType?: 'movie' | 'tv' } | undefined;
+  watchHistory: Record<string, { season?: number; episode?: number; lastWatched: number; timestamp?: number; duration?: number; mediaType?: 'movie' | 'tv'; movie?: Movie }>;
+  updateWatchHistory: (id: number | string, data: { season?: number; episode?: number; timestamp?: number; duration?: number; mediaType?: 'movie' | 'tv'; movie?: Movie }) => void;
+  getWatchHistory: (id: number | string) => { season?: number; episode?: number; lastWatched: number; timestamp?: number; duration?: number; mediaType?: 'movie' | 'tv'; movie?: Movie } | undefined;
   removeFromWatchHistory: (id: number | string) => void;
 
   // Ad Blocker Modal Preference
@@ -124,6 +134,12 @@ export const useAppStore = create<AppState>()(
       liveChannelsLoading: false,
       liveChannelsError: null,
       lastLiveChannelsFetched: null,
+
+      // Anime catalog
+      animeCatalog: emptyAnimeCatalog,
+      animeCatalogLoading: false,
+      animeCatalogError: null,
+      lastAnimeCatalogFetched: null,
 
       // Trailer Cache - NOT persisted to avoid quota issues
       trailerCache: {} as Record<number, string | null>,
@@ -181,7 +197,7 @@ export const useAppStore = create<AppState>()(
       setHideAdBlockerModal: (hide: boolean) => set({ hideAdBlockerModal: hide }),
 
       // Player Selection
-      preferredPlayer: 'cinesrc',
+      preferredPlayer: 'nxsha',
       setPreferredPlayer: (player: string) => set({ preferredPlayer: player }),
 
       // My List actions
@@ -237,6 +253,27 @@ export const useAppStore = create<AppState>()(
         } catch (err: any) {
           logger.error('❌ Error fetching live channels:', err);
           set({ liveChannelsError: err.message || 'Failed to load channels', liveChannelsLoading: false });
+        }
+      },
+
+      // Anime catalog fetching — called from Home so the Anime page is ready on arrival.
+      fetchAnimeCatalog: async (force = false) => {
+        const { lastAnimeCatalogFetched, animeCatalogLoading, animeCatalog } = get();
+        const now = Date.now();
+        const isCacheFresh = lastAnimeCatalogFetched && now - lastAnimeCatalogFetched < CACHE_TTL;
+        const hasCatalog = animeCatalog.trending.length + animeCatalog.topRated.length + animeCatalog.movies.length > 0;
+
+        if (!force && isCacheFresh && hasCatalog) return;
+        if (animeCatalogLoading) return;
+
+        set({ animeCatalogLoading: true, animeCatalogError: null });
+        try {
+          const catalog = await fetchAnimeCatalogFromSource();
+          set({ animeCatalog: catalog, animeCatalogLoading: false, lastAnimeCatalogFetched: now });
+          logger.log(`✅ Anime catalog fetched: ${catalog.trending.length + catalog.topRated.length + catalog.movies.length}`);
+        } catch (err: any) {
+          logger.error('❌ Error fetching anime catalog:', err);
+          set({ animeCatalogError: err.message || 'Failed to load anime', animeCatalogLoading: false });
         }
       },
 
@@ -318,12 +355,12 @@ export const useAppStore = create<AppState>()(
       }),
       // Migrate old player IDs that no longer exist
       migrate: (persistedState: any) => {
-        if (persistedState?.preferredPlayer === 'vidking') {
-          persistedState.preferredPlayer = 'cinesrc';
+        if (persistedState?.preferredPlayer !== 'nxsha') {
+          persistedState.preferredPlayer = 'nxsha';
         }
         return persistedState;
       },
-      version: 2,
+      version: 3,
     }
   )
 );

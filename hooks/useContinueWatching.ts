@@ -27,10 +27,11 @@ export function useContinueWatching(allMovies: Movie[]): ContinueWatchingItem[] 
     const items: ContinueWatchingItem[] = [];
 
     // Create a map for quick movie lookup
-    const movieMap = new Map<number, Movie>();
+    const movieMap = new Map<string, Movie>();
     allMovies.forEach((movie) => {
       if (movie?.id) {
-        movieMap.set(movie.id, movie);
+        const mediaType = movie.media_type || (movie.name ? 'tv' : 'movie');
+        movieMap.set(`${mediaType}:${movie.id}`, movie);
       }
     });
 
@@ -47,16 +48,16 @@ export function useContinueWatching(allMovies: Movie[]): ContinueWatchingItem[] 
       if (progress > 95) return; // Already finished
 
       // Find the movie in our data
-      const movieId = parseInt(id, 10);
-      let movie = movieMap.get(movieId);
+      const movieId = Number(id.split(':').at(-1));
+      const inferredType: 'movie' | 'tv' =
+        history.mediaType ?? (history.season ? 'tv' : 'movie');
+      let movie = history.movie || movieMap.get(`${inferredType}:${movieId}`);
 
       // If not found in the pool (TV shows are never in the movie pool),
       // build a minimal stub so the card can still be rendered.
       // Infer media type: if history.mediaType is set use it, otherwise
       // fall back to 'tv' when season/episode are recorded, else 'movie'.
       if (!movie) {
-        const inferredType: 'movie' | 'tv' =
-          history.mediaType ?? (history.season ? 'tv' : 'movie');
         movie = {
           id: movieId,
           title: undefined,

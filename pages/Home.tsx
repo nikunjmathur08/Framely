@@ -28,10 +28,12 @@ const Home: React.FC = () => {
   useEffect(() => {
     useAppStore.getState().fetchMovieData();
     useAppStore.getState().fetchLiveChannels(); // prefetch so Live TV loads instantly
+    useAppStore.getState().fetchAnimeCatalog(); // prefetch so Anime loads instantly
   }, []);
 
   // Get My List and Continue Watching
   const myList = useAppStore((state) => state.myList);
+  const animeCatalog = useAppStore((state) => state.animeCatalog);
   const removeFromWatchHistory = useAppStore((state) => state.removeFromWatchHistory);
   
   // Select a random movie for the banner from the first 6 trending items.
@@ -55,8 +57,11 @@ const Home: React.FC = () => {
     ...data.documentaries,
     ...data.upcoming,
     ...data.hindi,
+    ...animeCatalog.trending,
+    ...animeCatalog.topRated,
+    ...animeCatalog.movies,
     ...myList,
-  ], [data, myList]);
+  ], [data, animeCatalog, myList]);
   
   const continueWatchingItems = useContinueWatching(allMovies);
 

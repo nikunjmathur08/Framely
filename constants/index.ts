@@ -66,28 +66,13 @@ export const CACHE_CONFIG = {
  */
 export const PLAYER_CONFIGS = [
   {
-    id: 'cinesrc',
-    name: 'CineSRC',
-    baseUrl: 'https://cinesrc.st/embed',
-  },
-  {
-    id: 'videasy',
-    name: 'Videasy',
-    baseUrl: 'https://player.videasy.net',
-  },
-  {
-    id: 'vidplus',
-    name: 'VidPlus',
-    baseUrl: 'https://player.vidplus.to/embed',
-  },
-  {
-    id: 'mappleuk',
-    name: 'MappleUK',
-    baseUrl: 'https://mapple.uk/watch',
+    id: 'nxsha',
+    name: 'Nxsha',
+    baseUrl: 'https://nxsha.space/embed',
   },
 ] as const;
 
 /**
  * Default Player ID
  */
-export const DEFAULT_PLAYER = 'cinesrc';
+export const DEFAULT_PLAYER = 'nxsha';

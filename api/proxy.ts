@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
-const ALLOWED_ORIGINS = ['https://cinevid.st', 'https://vidcdn.vip'];
+const ALLOWED_ORIGINS = ['https://cinevid.st', 'https://vidcdn.vip', 'https://nxsha.space'];
 
 // Headers that cause frame-blocking or break the proxied response
 const HEADERS_TO_STRIP = new Set([
