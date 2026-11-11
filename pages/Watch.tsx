@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, Star, Calendar, Clock, ChevronDown } from 'lucide-react';
+import { motion } from 'framer-motion';
 import axios, { requests, TMDB_GENRES } from '../services/tmdb';
 import { TvShowDetails, Movie, Season } from '../types';
 import ProtectedIframe from '../components/ProtectedIframe';
@@ -55,9 +56,59 @@ const loadNxshaHistorySdk = () => {
   return nxshaHistorySdk;
 };
 
+interface PlayerConfig {
+  id: string;
+  name: string;
+  getSrc: (type: 'tv' | 'movie', id: string, season: number, episode: number, progress?: number) => string;
+}
+
+const PLAYER_CONFIGS: PlayerConfig[] = [
+  {
+    id: 'cinesrc',
+    name: 'CineSRC',
+    getSrc: (type, id, season, episode, progress) => {
+      const params = new URLSearchParams({ color: '#e50914', autonext: 'true', autoskip: 'true' });
+      if (progress && progress > 10) params.append('t', Math.floor(progress).toString());
+      if (type === 'movie') return `https://cinesrc.st/embed/movie/${id}?${params.toString()}`;
+      params.append('s', String(season));
+      params.append('e', String(episode));
+      return `https://cinesrc.st/embed/tv/${id}?${params.toString()}`;
+    },
+  },
+  {
+    id: 'yapgrid',
+    name: 'YapGrid',
+    getSrc: (type, id, season, episode) => {
+      const path = type === 'movie' ? `movie/${id}` : `tv/${id}/${season}/${episode}`;
+      return `https://yapgrid.com/embed/${path}?autoplay=1`;
+    },
+  },
+  {
+    id: 'vidplus',
+    name: 'VidPlus',
+    getSrc: (type, id, season, episode, progress) => {
+      const params = new URLSearchParams({ autoplay: 'true', nextButton: 'true' });
+      if (progress && progress > 10) params.append('progress', Math.floor(progress).toString());
+      const path = type === 'movie' ? `movie/${id}` : `tv/${id}/${season}/${episode}`;
+      return `https://player.vidplus.to/embed/${path}?${params.toString()}`;
+    },
+  },
+  {
+    id: 'mappleuk',
+    name: 'MappleUK',
+    getSrc: (type, id, season, episode, progress) => {
+      const params = new URLSearchParams({ autoPlay: 'true', nextButton: 'true', autoNext: 'true', theme: 'e50914' });
+      if (progress && progress > 10) params.append('startAt', Math.floor(progress).toString());
+      const path = type === 'movie' ? `movie/${id}` : `tv/${id}-${season}-${episode}`;
+      return `https://mapple.uk/watch/${path}?${params.toString()}`;
+    },
+  },
+];
+
 const Watch: React.FC = () => {
   const { type, id } = useParams<{ type: string; id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const [season, setSeason] = useState(1);
   const [episode, setEpisode] = useState(1);
   const [tvDetails, setTvDetails] = useState<TvShowDetails | null>(null);
@@ -71,11 +122,14 @@ const Watch: React.FC = () => {
     getWatchHistory, 
     hideAdBlockerModal, 
     setHideAdBlockerModal,
+    preferredPlayer,
+    setPreferredPlayer,
   } = useAppStore();
 
   const mediaType = type === 'tv' ? 'tv' : 'movie';
+  const isAnime = location.pathname.startsWith('/watch/anime/');
   const playerFrameRef = useRef<HTMLIFrameElement>(null);
-  const historyKey = `framely:${mediaType}:${id || ''}`;
+  const historyKey = `framely:${isAnime ? 'anime:' : ''}${mediaType}:${id || ''}`;
 
   // Compute SEO data based on loaded details
   const seoData = useMemo(() => {
@@ -145,6 +199,7 @@ const Watch: React.FC = () => {
 
   // Nxsha's SDK validates player-origin history messages and provides accurate resume support.
   useEffect(() => {
+    if (!isAnime) return;
     let active = true;
     let controller: NxshaHistoryController | undefined;
 
@@ -180,7 +235,35 @@ const Watch: React.FC = () => {
       active = false;
       controller?.destroy();
     };
-  }, [mediaType, id, season, episode, historyKey, getWatchHistory, updateHistory]);
+  }, [isAnime, mediaType, id, season, episode, historyKey, getWatchHistory, updateHistory]);
+
+  // Original providers use their own postMessage formats for time updates.
+  useEffect(() => {
+    if (isAnime) return;
+
+    const handleMessage = (event: MessageEvent) => {
+      try {
+        let data = event.data;
+        if (typeof data === 'string') {
+          try { data = JSON.parse(data); } catch { return; }
+        }
+        if (!data) return;
+
+        if (data.type === 'cinesrc:timeupdate') {
+          updateHistory(season, episode, data.currentTime, data.duration);
+        } else if (data.type === 'PLAYER_EVENT' && data.data) {
+          updateHistory(season, episode, data.data.currentTime, data.data.duration);
+        } else if (data.timestamp !== undefined && data.duration !== undefined) {
+          updateHistory(season, episode, data.timestamp, data.duration);
+        }
+      } catch (error) {
+        logger.error('Error processing player history message', error);
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, [isAnime, season, episode, updateHistory]);
 
   // Fetch Media Details
   useEffect(() => {
@@ -227,6 +310,15 @@ const Watch: React.FC = () => {
 
   const currentSrc = useMemo(() => {
     if (!id) return '';
+    if (!isAnime) {
+      const history = getWatchHistory(historyKey) || getWatchHistory(id);
+      const progress = history?.timestamp && (!history.duration || history.timestamp < history.duration * 0.95)
+        ? history.timestamp
+        : 0;
+      const config = PLAYER_CONFIGS.find((player) => player.id === preferredPlayer) || PLAYER_CONFIGS[0];
+      return config.getSrc(mediaType, id, season, episode, progress);
+    }
+
     const path = mediaType === 'movie' ? `movie/${id}` : `tv/${id}/${season}/${episode}`;
     const params = new URLSearchParams({
       autoplay: 'true',
@@ -237,7 +329,7 @@ const Watch: React.FC = () => {
       parent_origin: window.location.origin,
     });
     return `https://nxsha.space/embed/${path}?${params.toString()}`;
-  }, [id, season, episode, mediaType, historyKey]);
+  }, [id, season, episode, mediaType, historyKey, isAnime, getWatchHistory, preferredPlayer]);
 
   const details = mediaType === 'tv' ? tvDetails : movieDetails;
   const releaseYear = (details?.release_date || details?.first_air_date)?.split('-')[0];
@@ -302,7 +394,33 @@ const Watch: React.FC = () => {
         <div className="space-y-4">
           <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
             <h1 className="text-3xl md:text-5xl font-bold">{details?.title || details?.name}</h1>
-            
+            {!isAnime && (
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-gray-500 font-bold uppercase tracking-widest mr-2">Player:</span>
+                <div className="flex flex-wrap gap-2 p-0.5 bg-[#0a0a0a] rounded-lg border border-[#242424]">
+                  {PLAYER_CONFIGS.map((player) => (
+                    <button
+                      key={player.id}
+                      onClick={() => setPreferredPlayer(player.id)}
+                      className="relative px-4 py-1.5 rounded-md text-[10px] uppercase font-bold tracking-wider transition-colors duration-300 outline-none"
+                    >
+                      <span className={`relative z-10 transition-colors duration-300 ${
+                        preferredPlayer === player.id ? 'text-black' : 'text-gray-400 hover:text-white'
+                      }`}>
+                        {player.name}
+                      </span>
+                      {preferredPlayer === player.id && (
+                        <motion.div
+                          layoutId="activePlayerPill"
+                          className="absolute inset-0 bg-neutral-200 rounded-md shadow-[0_0_15px_rgba(229,229,229,0.15)]"
+                          transition={{ type: 'spring', bounce: 0.2, duration: 0.6 }}
+                        />
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
           
           <div className="flex flex-wrap items-center gap-4 text-sm md:text-base text-gray-400">

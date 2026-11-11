@@ -60,6 +60,7 @@ const App: React.FC = () => {
               <Route path="/tv/:id/:slug" element={<PageWrapper><TvDetails /></PageWrapper>} />
               
               {/* Watch routes */}
+              <Route path="/watch/anime/:type/:id" element={<PageWrapper><Watch /></PageWrapper>} />
               <Route path="/watch/:type/:id" element={<PageWrapper><Watch /></PageWrapper>} />
               <Route path="/watch/live/:id" element={<PageWrapper><WatchLive /></PageWrapper>} />
               

@@ -197,7 +197,7 @@ export const useAppStore = create<AppState>()(
       setHideAdBlockerModal: (hide: boolean) => set({ hideAdBlockerModal: hide }),
 
       // Player Selection
-      preferredPlayer: 'nxsha',
+      preferredPlayer: 'cinesrc',
       setPreferredPlayer: (player: string) => set({ preferredPlayer: player }),
 
       // My List actions
@@ -355,12 +355,12 @@ export const useAppStore = create<AppState>()(
       }),
       // Migrate old player IDs that no longer exist
       migrate: (persistedState: any) => {
-        if (persistedState?.preferredPlayer !== 'nxsha') {
-          persistedState.preferredPlayer = 'nxsha';
+        if (persistedState?.preferredPlayer === 'nxsha' || persistedState?.preferredPlayer === 'videasy' || persistedState?.preferredPlayer === 'vidking') {
+          persistedState.preferredPlayer = 'cinesrc';
         }
         return persistedState;
       },
-      version: 3,
+      version: 4,
     }
   )
 );

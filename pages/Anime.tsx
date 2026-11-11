@@ -40,13 +40,13 @@ const Anime: React.FC = () => {
         )}
 
         {(loading || catalog.trending.length > 0) && (
-          <Row title="Trending Anime" movies={catalog.trending} loading={loading} isLargeRow />
+          <Row title="Trending Anime" movies={catalog.trending} loading={loading} isLargeRow watchPathPrefix="/watch/anime" />
         )}
         {(loading || catalog.topRated.length > 0) && (
-          <Row title="Top Rated Anime" movies={catalog.topRated} loading={loading} isLargeRow />
+          <Row title="Top Rated Anime" movies={catalog.topRated} loading={loading} isLargeRow watchPathPrefix="/watch/anime" />
         )}
         {(loading || catalog.movies.length > 0) && (
-          <Row title="Anime Movies" movies={catalog.movies} loading={loading} isLargeRow />
+          <Row title="Anime Movies" movies={catalog.movies} loading={loading} isLargeRow watchPathPrefix="/watch/anime" />
         )}
 
         {!loading && !error && !hasResults && (

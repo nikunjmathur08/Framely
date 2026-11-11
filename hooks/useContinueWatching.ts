@@ -9,6 +9,7 @@ export interface ContinueWatchingItem {
   season?: number;
   episode?: number;
   lastWatched: number;
+  isAnime?: boolean;
 }
 
 /**
@@ -78,6 +79,7 @@ export function useContinueWatching(allMovies: Movie[]): ContinueWatchingItem[] 
         season: history.season,
         episode: history.episode,
         lastWatched: history.lastWatched,
+        isAnime: id.startsWith('framely:anime:'),
       });
     });
 

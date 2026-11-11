@@ -13,6 +13,7 @@ interface ContinueWatchingItem {
   season?: number;
   episode?: number;
   lastWatched: number;
+  isAnime?: boolean;
 }
 
 interface ContinueWatchingRowProps {
@@ -68,13 +69,14 @@ interface ContinueWatchingCardProps {
 }
 
 const ContinueWatchingCard: React.FC<ContinueWatchingCardProps> = ({ item, onRemove, index }) => {
-  const { movie, progress, season, episode, id } = item;
+  const { movie, progress, season, episode, id, isAnime } = item;
   const mediaType = movie.media_type || (movie.first_air_date ? 'tv' : 'movie');
   
   // Build the watch URL with season/episode for TV shows
-  const watchUrl = mediaType === 'tv' 
-    ? `/watch/tv/${movie.id}` 
-    : `/watch/movie/${movie.id}`;
+  const watchPrefix = isAnime ? '/watch/anime' : '/watch';
+  const watchUrl = mediaType === 'tv'
+    ? `${watchPrefix}/tv/${movie.id}`
+    : `${watchPrefix}/movie/${movie.id}`;
 
   const title = movie.title || movie.name || 'Unknown';
 

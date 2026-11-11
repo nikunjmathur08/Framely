@@ -24,6 +24,7 @@ interface Props {
   total?: number;
   isGrid?: boolean;
   rowKey?: string;
+  watchPathPrefix?: string;
 }
 
 // Static animation configs - defined OUTSIDE component to prevent re-creation
@@ -80,6 +81,7 @@ const MovieCard: React.FC<Props> = memo(({
   total = 0,
   isGrid = false,
   rowKey = 'default',
+  watchPathPrefix = '/watch',
 }) => {
   const [isMuted, setIsMuted] = useState(true);
   const [player, setPlayer] = useState<any>(null);
@@ -157,8 +159,8 @@ const MovieCard: React.FC<Props> = memo(({
 
   // Callbacks
   const handlePlay = useCallback(() => {
-    navigate(`/watch/${mediaType}/${movie.id}`);
-  }, [navigate, mediaType, movie.id]);
+    navigate(`${watchPathPrefix}/${mediaType}/${movie.id}`);
+  }, [navigate, watchPathPrefix, mediaType, movie.id]);
 
   const handleListToggle = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
@@ -189,13 +191,18 @@ const MovieCard: React.FC<Props> = memo(({
   }, [isDesktop, setHoveredMovie]);
 
   const handleCardClick = useCallback(() => {
-    if (!isDesktop) openMoreInfo(movie);
-  }, [isDesktop, openMoreInfo, movie]);
+    if (!isDesktop && watchPathPrefix === '/watch') openMoreInfo(movie);
+    if (!isDesktop && watchPathPrefix !== '/watch') handlePlay();
+  }, [isDesktop, watchPathPrefix, openMoreInfo, movie, handlePlay]);
 
   const handleMoreInfoClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
+    if (watchPathPrefix !== '/watch') {
+      handlePlay();
+      return;
+    }
     openMoreInfo(movie);
-  }, [openMoreInfo, movie]);
+  }, [watchPathPrefix, handlePlay, openMoreInfo, movie]);
 
   const handleMuteClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();

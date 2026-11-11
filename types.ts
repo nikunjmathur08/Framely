@@ -90,6 +90,7 @@ export interface RowProps {
   movies: Movie[];
   loading: boolean;
   isLargeRow?: boolean;
+  watchPathPrefix?: string;
 }
 
 export interface BannerProps {

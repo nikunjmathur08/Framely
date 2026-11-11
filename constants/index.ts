@@ -66,6 +66,26 @@ export const CACHE_CONFIG = {
  */
 export const PLAYER_CONFIGS = [
   {
+    id: 'cinesrc',
+    name: 'CineSRC',
+    baseUrl: 'https://cinesrc.st/embed',
+  },
+  {
+    id: 'yapgrid',
+    name: 'YapGrid',
+    baseUrl: 'https://yapgrid.com/embed',
+  },
+  {
+    id: 'vidplus',
+    name: 'VidPlus',
+    baseUrl: 'https://player.vidplus.to/embed',
+  },
+  {
+    id: 'mappleuk',
+    name: 'MappleUK',
+    baseUrl: 'https://mapple.uk/watch',
+  },
+  {
     id: 'nxsha',
     name: 'Nxsha',
     baseUrl: 'https://nxsha.space/embed',
@@ -75,4 +95,4 @@ export const PLAYER_CONFIGS = [
 /**
  * Default Player ID
  */
-export const DEFAULT_PLAYER = 'nxsha';
+export const DEFAULT_PLAYER = 'cinesrc';

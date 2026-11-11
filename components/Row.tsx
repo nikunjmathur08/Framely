@@ -10,6 +10,7 @@ const Row: React.FC<RowProps> = ({
   movies,
   loading,
   isLargeRow = false,
+  watchPathPrefix,
 }) => {
   const rowRef = useRef<HTMLDivElement>(null);
   const [isMoved, setIsMoved] = useState(false);
@@ -86,6 +87,7 @@ const Row: React.FC<RowProps> = ({
                   index={index}
                   total={safeMovies.length}
                   rowKey={sectionId}
+                  watchPathPrefix={watchPathPrefix}
                 />
               ))}
         </div>
