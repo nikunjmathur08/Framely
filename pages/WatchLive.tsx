@@ -27,8 +27,8 @@ const WatchLive: React.FC = () => {
   const channelFromStore = useAppStore((s) => s.liveChannels.find((c) => c.id === id));
   const channelSlug = channelFromStore?.slug || channelInfo?.slug;
   const channelPageUrl = channelSlug
-    ? `https://cinevid.st/channels/${channelSlug}`
-    : `https://cinevid.st/player.html?id=${id}`;
+    ? `https://cinevid.pro/channels/${channelSlug}`
+    : `https://cinevid.pro/player.html?id=${id}`;
 
   const playerUrl = channelPageUrl;
   const iframeUrl = `/api/proxy?url=${encodeURIComponent(playerUrl)}`;

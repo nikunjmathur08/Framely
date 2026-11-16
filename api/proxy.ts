@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
-const ALLOWED_ORIGINS = ['https://cinevid.st', 'https://vidcdn.vip', 'https://nxsha.space'];
+const ALLOWED_ORIGINS = ['https://cinevid.pro', 'https://vidcdn.vip', 'https://nxsha.space'];
 
 // Headers that cause frame-blocking or break the proxied response
 const HEADERS_TO_STRIP = new Set([
@@ -20,7 +20,7 @@ const HEADERS_TO_STRIP = new Set([
  * Injected into every proxied HTML page.
  * Monkey-patches fetch + XHR + iframe.src so all requests (relative and absolute)
  * made by the player JS or embedded iframes route through /api/proxy instead
- * of hitting cinevid.st directly from the browser (which would be CORS/frame-blocked).
+ * of hitting cinevid.pro directly from the browser (which would be CORS/frame-blocked).
  */
 const INTERCEPTOR_SCRIPT = `<script>
 (function () {
@@ -33,7 +33,7 @@ const INTERCEPTOR_SCRIPT = `<script>
     }
     try {
       var resolved = new URL(url, document.baseURI || window.location.href).href;
-      if (/^https?:\\/\\/(cinevid\\.st|vidcdn\\.vip)/i.test(resolved)) {
+      if (/^https?:\\/\\/(cinevid\\.pro|vidcdn\\.vip)/i.test(resolved)) {
         return PROXY + encodeURIComponent(resolved);
       }
       return url;
@@ -208,7 +208,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       let html = await upstream.text();
       console.log(`[proxy:${requestId}] HTML length: ${html.length}`);
 
-      // 1. Inject <base> so relative asset paths resolve to cinevid.st
+      // 1. Inject <base> so relative asset paths resolve to cinevid.pro
       if (/<head/i.test(html)) {
         html = html.replace(/(<head[^>]*>)/i, `$1<base href="${target.origin}/">`);
       } else {

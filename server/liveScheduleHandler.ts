@@ -10,10 +10,10 @@ interface Channel {
   status?: string;
 }
 
-const LOGO_BASE = 'https://cinevid.st';
+const LOGO_BASE = 'https://cinevid.pro'; // Base URL for channel logos
 
 // Channel list is read from channels.json at the project root
-// (cinevid.st blocks server-side requests).
+// (cinevid.pro blocks server-side requests).
 const CHANNELS_FILE = path.resolve(__dirname, '..', 'channels.json');
 const FALLBACK_FILE = path.resolve(process.cwd(), 'channels.json');
 

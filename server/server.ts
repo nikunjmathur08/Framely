@@ -519,8 +519,8 @@ app.use('/api/tmdb', validateApiKey, async (req: Request, res: Response) => {
 // ── Live TV Schedule ─────────────────────────────────────────────────────────
 app.get('/api/live-schedule', liveScheduleHandler);
 
-// ── Player Proxy (strips X-Frame-Options so cinevid.st can be embedded) ──────
-const PROXY_ALLOWED_ORIGINS = ['https://cinevid.st', 'https://vidcdn.vip', 'https://nxsha.space'];
+// ── Player Proxy (strips X-Frame-Options so cinevid.pro can be embedded) ──────
+const PROXY_ALLOWED_ORIGINS = ['https://cinevid.pro', 'https://vidcdn.vip', 'https://nxsha.space'];
 const PROXY_HEADERS_TO_STRIP = new Set([
   'x-frame-options', 'content-security-policy', 'content-security-policy-report-only',
   'cross-origin-embedder-policy', 'cross-origin-opener-policy', 'cross-origin-resource-policy',
@@ -539,7 +539,7 @@ const PROXY_INTERCEPTOR_SCRIPT = `<script>
     }
     try {
       var resolved = new URL(url, document.baseURI || window.location.href).href;
-      if (/^https?:\\/\\/(cinevid\\.st|vidcdn\\.vip)/i.test(resolved)) {
+      if (/^https?:\\/\\/(cinevid\\.pro|vidcdn\\.vip)/i.test(resolved)) {
         return PROXY + encodeURIComponent(resolved);
       }
       return url;

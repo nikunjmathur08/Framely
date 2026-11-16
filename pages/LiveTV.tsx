@@ -68,7 +68,7 @@ interface RedirectModalProps {
 
 export const getCinevidChannelUrl = (channel: LiveChannel): string => {
   if (channel.slug) {
-    return `https://cinevid.st/channels/${channel.slug}`;
+    return `https://cinevid.pro/channels/${channel.slug}`;
   }
   const cleanName = channel.channelName
     .toLowerCase()
@@ -80,8 +80,8 @@ export const getCinevidChannelUrl = (channel: LiveChannel): string => {
     : cleanName;
 
   return fallbackSlug
-    ? `https://cinevid.st/channels/${fallbackSlug}`
-    : `https://cinevid.st/player.html?id=${channel.id}`;
+    ? `https://cinevid.pro/channels/${fallbackSlug}`
+    : `https://cinevid.pro/player.html?id=${channel.id}`;
 };
 
 const RedirectModal: React.FC<RedirectModalProps> = ({ channel, onClose }) => {

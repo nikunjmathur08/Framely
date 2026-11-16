@@ -99,7 +99,7 @@ const PLAYER_CONFIGS: PlayerConfig[] = [
     getSrc: (type, id, season, episode, progress) => {
       const params = new URLSearchParams({ autoPlay: 'true', nextButton: 'true', autoNext: 'true', theme: 'e50914' });
       if (progress && progress > 10) params.append('startAt', Math.floor(progress).toString());
-      const path = type === 'movie' ? `movie/${id}` : `tv/${id}-${season}-${episode}`;
+      const path = type === 'movie' ? `movie/${id}` : `tv/${id}/${season}/${episode}`;
       return `https://mapple.uk/watch/${path}?${params.toString()}`;
     },
   },

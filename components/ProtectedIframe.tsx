@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 // Module declaration removed
 
@@ -15,7 +15,9 @@ interface ProtectedIframeProps {
 /**
  * Optimized iframe wrapper for video player embeds.
  * - Overlay technique: intercepts the first click (which would trigger a popup ad)
- *   and briefly lifts for 1.5s so the next click reaches the actual player.
+ *   then permanently lifts so the user can freely interact with the actual player
+ *   controls (play, pause, seek, fullscreen, etc.).
+ * - The overlay resets when the content source changes (new video = new ad layers).
  * - referrerPolicy="no-referrer" suppresses referrer-based ad redirects.
  * - No sandbox attribute — live TV providers block sandboxed iframes.
  */
@@ -30,12 +32,18 @@ const ProtectedIframe: React.FC<ProtectedIframeProps> = React.memo(({
 }) => {
   const [overlayActive, setOverlayActive] = useState(true);
 
+  // Reset overlay protection when content source changes (new video/content)
+  useEffect(() => {
+    setOverlayActive(true);
+  }, [src]);
+
   const handleOverlayClick = () => {
+    // Permanently disable the overlay after absorbing the first click.
+    // The first click blocks the initial popup ad that most embedded
+    // players trigger on first user interaction. After that, the overlay
+    // stays off so the user can freely use all player controls —
+    // play, pause, seek, volume, and crucially, fullscreen.
     setOverlayActive(false);
-    // Tight 700ms window: just enough time for the very next click to pass through 
-    // to the real play button, but drops the shield back fast enough to catch 
-    // subsequent invisible ad layers (which often stack 2-3 deep).
-    setTimeout(() => setOverlayActive(true), 700);
   };
 
   return (

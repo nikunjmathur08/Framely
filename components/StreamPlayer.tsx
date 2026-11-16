@@ -8,7 +8,7 @@ const StreamPlayer: React.FC<StreamPlayerProps> = ({ id }) => {
   const [error, setError] = useState(false);
   
   // Use VITE_STREAM_PROVIDER_URL or fallback
-  const iframeUrl = `https://cinevid.st/player.html?id=${id}`;
+  const iframeUrl = `https://cinevid.pro/player.html?id=${id}`;
 
   if (error) {
     return (

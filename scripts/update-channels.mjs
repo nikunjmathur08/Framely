@@ -14,13 +14,13 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const SOURCE = process.env.CHANNELS_SOURCE_URL || 'https://cinevid.st/api/channels';
+const SOURCE = process.env.CHANNELS_SOURCE_URL || 'https://cinevid.pro/api/channels';
 const MIN_CHANNELS = 100;
 const channelsPath = path.join(root, 'channels.json');
 
 const headers = {
   accept: '*/*',
-  referer: 'https://cinevid.st/iptv/',
+  referer: 'https://cinevid.pro/iptv/',
   'user-agent':
     'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
 };
@@ -76,9 +76,9 @@ interface Channel {
   status?: string;
 }
 
-const LOGO_BASE = 'https://cinevid.st';
+const LOGO_BASE = 'https://cinevid.pro';
 
-// [id, name, logo, category] — generated from channels.json (cinevid.st blocks server-side requests).
+// [id, name, logo, category] — generated from channels.json (cinevid.pro blocks server-side requests).
 // Regenerated automatically by scripts/update-channels.mjs.
 const RAW: [string, string, string, string][] = ${JSON.stringify(rows)};
 
